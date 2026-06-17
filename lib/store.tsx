@@ -38,6 +38,7 @@ interface StoreContextProps {
   addPeca: (pecaData: Omit<Peca, "id" | "criadoEm">) => Promise<void>;
   updatePeca: (id: string, updates: Partial<Peca>) => Promise<void>;
   deletePeca: (id: string) => Promise<void>;
+  refetchPecas: () => Promise<void>;
 
   // Pedidos Actions
   addPedido: (
@@ -147,6 +148,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Rebuscar apenas peças do banco (usado após cadastro/edição)
+  const refetchPecas = useCallback(async () => {
+    try {
+      const pecasData = await apiFetch<Peca[]>("/api/pecas");
+      setPecas(pecasData);
+    } catch (err) {
+      console.error("[Store] Erro ao rebuscar peças:", err);
+    }
+  }, []);
+
   // Restaurar sessão e carrinho do localStorage (apenas sessão/carrinho)
   useEffect(() => {
     try {
@@ -216,19 +227,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const logoutAdmin = () => setAdminLogado(false);
 
-  // ── Pecas ──────────────────────────────────────────────────────────────────
+  // ── Pecas ────────────────────────────────────────────���─────────────────────
 
   const addPeca = async (pecaData: Omit<Peca, "id" | "criadoEm">) => {
-    const { id } = await apiFetch<{ id: string }>("/api/pecas", {
+    await apiFetch<{ id: string }>("/api/pecas", {
       method: "POST",
       body: JSON.stringify(pecaData),
     });
-    const newPeca: Peca = {
-      ...pecaData,
-      id,
-      criadoEm: new Date().toISOString(),
-    };
-    setPecas((prev) => [newPeca, ...prev]);
+    // Rebuscar do banco para garantir dados completos e consistentes
+    await refetchPecas();
   };
 
   const updatePeca = async (id: string, updates: Partial<Peca>) => {
@@ -236,9 +243,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       method: "PUT",
       body: JSON.stringify(updates),
     });
-    setPecas((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
+    // Rebuscar do banco para refletir mudanças reais
+    await refetchPecas();
   };
 
   const deletePeca = async (id: string) => {
@@ -514,6 +520,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addPeca,
         updatePeca,
         deletePeca,
+        refetchPecas,
         addPedido,
         responderPedido,
         addToCart,
