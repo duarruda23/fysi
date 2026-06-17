@@ -598,6 +598,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         pecas,
         pedidos,
         carrinho,
+        loading,
+        adminLogado,
         clienteLogado,
         loginCliente,
         cadastrarCliente,
