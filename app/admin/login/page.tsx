@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, User, KeyRound, CheckCircle2 } from "lucide-react";
+import { Lock, User, KeyRound, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import ClientOnly from "@/components/ClientOnly";
 
