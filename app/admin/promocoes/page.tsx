@@ -17,12 +17,12 @@ export default function AdminPromocoesPage() {
 
   const [formOpen, setFormOpen] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!nome.trim()) return;
 
-    addPromocao({
+    await addPromocao({
       nome: nome.trim(),
       descontoPercentual,
       categoriaAlvo: categoriaAlvo || undefined,
