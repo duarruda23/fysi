@@ -9,7 +9,10 @@ const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600"
 
 export const metadata: Metadata = {
   title: "Fysi - Loja & Painel Admin",
-  description: "Sistema de ecommerce e gestão Fysi."
+  description: "Sistema de ecommerce e gestão Fysi.",
+  other: {
+    "facebook-domain-verification": "1trd67r6p9ws1z5cwvzk8bavmtbsp6",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
