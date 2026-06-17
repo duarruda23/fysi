@@ -55,20 +55,20 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     );
   }
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (confirm(`Deseja aprovar o pedido #${pedido.numero}? Isto irá debitar as quantidades correspondentes do estoque.`)) {
-      responderPedido(pedido.id, "aprovado");
+      await responderPedido(pedido.id, "aprovado");
     }
   };
 
-  const handleRefuse = (e: React.FormEvent) => {
+  const handleRefuse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!motivo.trim()) {
       alert("Por favor, digite o motivo da recusa.");
       return;
     }
 
-    responderPedido(pedido.id, "recusado", motivo);
+    await responderPedido(pedido.id, "recusado", motivo);
     setShowRefusalForm(false);
     setMotivo("");
   };

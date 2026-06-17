@@ -11,7 +11,7 @@ function currency(value: number) {
 }
 
 export default function LojaHomePage() {
-  const { pecas } = useStore();
+  const { pecas, banner } = useStore();
 
   // Get active pieces with some stock
   const featuredPecas = useMemo(() => {
@@ -28,36 +28,38 @@ export default function LojaHomePage() {
 
   return (
     <div className="space-y-16">
-      {/* Hero Editorial Banner */}
-      <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft min-h-[480px] flex items-end">
-        <img
-          src="/brand/perfil-5.png"
-          alt="Editorial Fysi"
-          className="absolute inset-0 h-full w-full object-cover opacity-60 md:opacity-75 transition-transform duration-700 hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
-        <div className="relative p-6 md:p-12 max-w-2xl space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-medium backdrop-blur">
-            <Sparkles size={13} className="text-gold" />
-            Coleção Essenciais 2026
+      {/* Hero Editorial Banner — dados do banco */}
+      {banner.ativo && (
+        <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft min-h-[480px] flex items-end">
+          <img
+            src={banner.imagemUrl}
+            alt="Banner principal Fysi"
+            className="absolute inset-0 h-full w-full object-cover opacity-60 md:opacity-75 transition-transform duration-700 hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
+          <div className="relative p-6 md:p-12 max-w-2xl space-y-6">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-medium backdrop-blur">
+              <Sparkles size={13} className="text-gold" />
+              {banner.eyebrow}
+            </div>
+            <h1 className="font-serif text-4xl font-semibold leading-tight md:text-6xl">
+              {banner.titulo}
+            </h1>
+            <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-lg">
+              {banner.subtitulo}
+            </p>
+            <div className="pt-2">
+              <Link
+                href={banner.botaoLink}
+                className="inline-flex h-12 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-md active:scale-95"
+              >
+                {banner.botaoTexto}
+                <ArrowRight size={16} />
+              </Link>
+            </div>
           </div>
-          <h1 className="font-serif text-4xl font-semibold leading-tight md:text-6xl">
-            Clean luxury para o seu dia a dia.
-          </h1>
-          <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-lg">
-            Descubra peças de linho, cetim e alfaiataria esculpidas para durar e complementar a sua rotina com caimento impecável e elegância atemporal.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/produtos"
-              className="inline-flex h-12 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-md active:scale-95"
-            >
-              Explorar Catálogo
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Category Section */}
       <section className="space-y-6">

@@ -24,9 +24,9 @@ export default function ConfigPage() {
     }
   }, [configuracoes]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateConfiguracoes({
+    await updateConfiguracoes({
       googleAnalyticsId: gaId.trim(),
       metaPixelId: pixelId.trim(),
       googleAdsId: adsId.trim(),

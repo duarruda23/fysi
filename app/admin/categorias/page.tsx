@@ -9,7 +9,7 @@ export default function AdminCategoriasPage() {
   const [newCatName, setNewCatName] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -28,7 +28,7 @@ export default function AdminCategoriasPage() {
       return;
     }
 
-    addCategoria(nameTrimmed);
+    await addCategoria(nameTrimmed);
     setNewCatName("");
   };
 

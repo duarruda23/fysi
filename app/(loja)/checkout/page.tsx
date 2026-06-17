@@ -116,17 +116,17 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
-    
+
     // Format delivery address if pickup selected
     const finalEndereco = opcaoEntrega === "retirada" ? "Retirada na loja física Fysi" : endereco;
 
-    setTimeout(() => {
-      const newOrder = addPedido(
+    try {
+      const newOrder = await addPedido(
         {
           nome,
           telefone,
@@ -136,14 +136,16 @@ export default function CheckoutPage() {
         appliedCoupon?.descontoPercentual
       );
 
-      setIsSubmitting(false);
-
       if (newOrder) {
         router.push(`/checkout/confirmacao/${newOrder.id}`);
       } else {
         alert("Erro ao finalizar o pedido. O carrinho pode estar vazio.");
       }
-    }, 1000); // Small delay for UX loading effect
+    } catch {
+      alert("Erro ao finalizar o pedido. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (carrinho.length === 0) {

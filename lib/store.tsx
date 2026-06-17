@@ -1,8 +1,16 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-import type { Peca, Pedido, StatusPedido, ItemPedido, VariacaoPeca, Categoria, Promocao, InscricaoVIP, ConfiguracoesLoja } from "./types";
-import { pecas as initialPecas, pedidos as initialPedidos } from "./mock-data";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import type {
+  Peca,
+  Pedido,
+  ItemPedido,
+  Categoria,
+  Promocao,
+  InscricaoVIP,
+  ConfiguracoesLoja,
+  Banner,
+} from "./types";
 
 interface Cliente {
   nome: string;
@@ -15,27 +23,36 @@ interface StoreContextProps {
   pedidos: Pedido[];
   carrinho: ItemPedido[];
   loading: boolean;
-  
+
   // Cliente Session
   clienteLogado: Cliente | null;
-  loginCliente: (telefone: string) => boolean;
+  loginCliente: (telefone: string) => Promise<boolean>;
   cadastrarCliente: (cliente: Cliente) => void;
   logoutCliente: () => void;
-  
+
   // Admin Session
   adminLogado: boolean;
   loginAdmin: (usuario: string, senha: string) => boolean;
   logoutAdmin: () => void;
-  
+
   // Pecas Actions
-  addPeca: (pecaData: Omit<Peca, "id" | "criadoEm">) => void;
-  updatePeca: (id: string, updates: Partial<Peca>) => void;
-  deletePeca: (id: string) => void;
-  
+  addPeca: (pecaData: Omit<Peca, "id" | "criadoEm">) => Promise<void>;
+  updatePeca: (id: string, updates: Partial<Peca>) => Promise<void>;
+  deletePeca: (id: string) => Promise<void>;
+  refetchPecas: () => Promise<void>;
+
   // Pedidos Actions
-  addPedido: (cliente: Cliente, cupom?: string, descontoPercentual?: number) => Pedido | null;
-  responderPedido: (id: string, status: "aprovado" | "recusado", motivoRecusa?: string) => void;
-  
+  addPedido: (
+    cliente: Cliente,
+    cupom?: string,
+    descontoPercentual?: number
+  ) => Promise<Pedido | null>;
+  responderPedido: (
+    id: string,
+    status: "aprovado" | "recusado",
+    motivoRecusa?: string
+  ) => Promise<void>;
+
   // Carrinho Actions
   addToCart: (peca: Peca, variacaoId: string, quantidade: number) => void;
   removeFromCart: (variacaoId: string) => void;
@@ -44,169 +61,169 @@ interface StoreContextProps {
 
   // Categorias
   categorias: Categoria[];
-  addCategoria: (nome: string) => void;
-  deleteCategoria: (id: string) => void;
+  addCategoria: (nome: string) => Promise<void>;
+  deleteCategoria: (id: string) => Promise<void>;
 
   // Promocoes
   promocoes: Promocao[];
-  addPromocao: (promocaoData: Omit<Promocao, "id" | "criadoEm">) => void;
-  updatePromocao: (id: string, updates: Partial<Promocao>) => void;
-  deletePromocao: (id: string) => void;
+  addPromocao: (promocaoData: Omit<Promocao, "id" | "criadoEm">) => Promise<void>;
+  updatePromocao: (id: string, updates: Partial<Promocao>) => Promise<void>;
+  deletePromocao: (id: string) => Promise<void>;
 
   // Lista VIP
   listaVip: InscricaoVIP[];
-  inscreverVip: (inscricao: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">) => void;
-  toggleNotificadoVip: (id: string) => void;
-  deleteVip: (id: string) => void;
+  inscreverVip: (
+    inscricao: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
+  ) => Promise<void>;
+  toggleNotificadoVip: (id: string) => Promise<void>;
+  deleteVip: (id: string) => Promise<void>;
 
   // Configurações
   configuracoes: ConfiguracoesLoja;
-  updateConfiguracoes: (updates: Partial<ConfiguracoesLoja>) => void;
+  updateConfiguracoes: (updates: Partial<ConfiguracoesLoja>) => Promise<void>;
+
+  // Banner
+  banner: Banner;
+  updateBanner: (updates: Partial<Banner>) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextProps | undefined>(undefined);
 
-const initialCategorias: Categoria[] = [
-  { id: "cat-1", nome: "Vestidos", criadoEm: new Date().toISOString() },
-  { id: "cat-2", nome: "Blusas", criadoEm: new Date().toISOString() },
-  { id: "cat-3", nome: "Calcas", criadoEm: new Date().toISOString() },
-  { id: "cat-4", nome: "Saias", criadoEm: new Date().toISOString() },
-  { id: "cat-5", nome: "Conjuntos", criadoEm: new Date().toISOString() },
-  { id: "cat-6", nome: "Macacoes", criadoEm: new Date().toISOString() }
-];
-
 const defaultConfigs: ConfiguracoesLoja = {
-  googleAnalyticsId: "G-VLBRWLD1PX",
-  metaPixelId: "843008558568835",
+  googleAnalyticsId: "",
+  metaPixelId: "",
   googleAdsId: "",
   minimoPecasAtacado: 12,
-  valorMinimoAtacado: 1000
+  valorMinimoAtacado: 1000,
 };
 
+const defaultBanner: Banner = {
+  titulo: "Clean luxury para o seu dia a dia.",
+  subtitulo: "Descubra peças de linho, cetim e alfaiataria esculpidas para durar.",
+  eyebrow: "Coleção Essenciais 2026",
+  botaoTexto: "Explorar Catálogo",
+  botaoLink: "/produtos",
+  imagemUrl: "/brand/perfil-5.png",
+  ativo: true,
+};
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error ?? `Erro na requisição ${url}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ─── Provider ────────────────────────────────────────────────────────────────
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [pecas, setPecas] = useState<Peca[]>(initialPecas);
-  const [pedidos, setPedidos] = useState<Pedido[]>(initialPedidos);
+  const [pecas, setPecas] = useState<Peca[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [carrinho, setCarrinho] = useState<ItemPedido[]>([]);
   const [clienteLogado, setClienteLogado] = useState<Cliente | null>(null);
   const [adminLogado, setAdminLogado] = useState<boolean>(false);
-  
-  const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [promocoes, setPromocoes] = useState<Promocao[]>([]);
   const [listaVip, setListaVip] = useState<InscricaoVIP[]>([]);
-  const [configuracoes, setConfiguracoes] = useState<ConfiguracoesLoja>(defaultConfigs);
-  
+  const [configuracoes, setConfiguracoes] =
+    useState<ConfiguracoesLoja>(defaultConfigs);
+  const [banner, setBanner] = useState<Banner>(defaultBanner);
   const [loading, setLoading] = useState(true);
 
-  // Sync state from localStorage on mount
-  useEffect(() => {
+  // Carregar dados do Supabase na montagem
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
     try {
-      const storedPecas = localStorage.getItem("fysi_pecas");
-      const storedPedidos = localStorage.getItem("fysi_pedidos");
-      const storedCarrinho = localStorage.getItem("fysi_carrinho");
-      const storedCliente = localStorage.getItem("fysi_cliente");
-      const storedAdmin = localStorage.getItem("fysi_admin");
-      
-      const storedCategorias = localStorage.getItem("fysi_categorias");
-      const storedPromocoes = localStorage.getItem("fysi_promocoes");
-      const storedListaVip = localStorage.getItem("fysi_listavip");
-      const storedConfiguracoes = localStorage.getItem("fysi_configuracoes");
+      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData, bannerData] =
+        await Promise.all([
+          apiFetch<Peca[]>("/api/pecas"),
+          apiFetch<Pedido[]>("/api/pedidos"),
+          apiFetch<Categoria[]>("/api/categorias"),
+          apiFetch<Promocao[]>("/api/promocoes"),
+          apiFetch<InscricaoVIP[]>("/api/lista-vip"),
+          apiFetch<ConfiguracoesLoja>("/api/configuracoes"),
+          apiFetch<Banner>("/api/banners"),
+        ]);
 
-      if (storedPecas) setPecas(JSON.parse(storedPecas));
-      if (storedPedidos) setPedidos(JSON.parse(storedPedidos));
-      if (storedCarrinho) setCarrinho(JSON.parse(storedCarrinho));
-      if (storedCliente) setClienteLogado(JSON.parse(storedCliente));
-      if (storedAdmin) setAdminLogado(JSON.parse(storedAdmin) === "true");
-      
-      if (storedCategorias) setCategorias(JSON.parse(storedCategorias));
-      if (storedPromocoes) setPromocoes(JSON.parse(storedPromocoes));
-      if (storedListaVip) setListaVip(JSON.parse(storedListaVip));
-      if (storedConfiguracoes) setConfiguracoes(JSON.parse(storedConfiguracoes));
-    } catch (error) {
-      console.error("Failed to load state from localStorage:", error);
+      setPecas(pecasData);
+      setPedidos(pedidosData);
+      setCategorias(categoriasData);
+      setPromocoes(promocoesData);
+      setListaVip(vipData);
+      setConfiguracoes(configData);
+      setBanner(bannerData);
+    } catch (err) {
+      console.error("[Store] Erro ao carregar dados:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Sync states back to localStorage
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_pecas", JSON.stringify(pecas));
+  // Rebuscar apenas peças do banco (usado após cadastro/edição)
+  const refetchPecas = useCallback(async () => {
+    try {
+      const pecasData = await apiFetch<Peca[]>("/api/pecas");
+      setPecas(pecasData);
+    } catch (err) {
+      console.error("[Store] Erro ao rebuscar peças:", err);
     }
-  }, [pecas, loading]);
+  }, []);
+
+  // Restaurar sessão e carrinho do localStorage (apenas sessão/carrinho)
+  useEffect(() => {
+    try {
+      const storedCarrinho = localStorage.getItem("fysi_carrinho");
+      const storedCliente = localStorage.getItem("fysi_cliente");
+      const storedAdmin = localStorage.getItem("fysi_admin");
+      if (storedCarrinho) setCarrinho(JSON.parse(storedCarrinho));
+      if (storedCliente) setClienteLogado(JSON.parse(storedCliente));
+      if (storedAdmin === "true") setAdminLogado(true);
+    } catch {}
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Persistir carrinho e sessão em localStorage
+  useEffect(() => {
+    localStorage.setItem("fysi_carrinho", JSON.stringify(carrinho));
+  }, [carrinho]);
 
   useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_pedidos", JSON.stringify(pedidos));
+    if (clienteLogado) {
+      localStorage.setItem("fysi_cliente", JSON.stringify(clienteLogado));
+    } else {
+      localStorage.removeItem("fysi_cliente");
     }
-  }, [pedidos, loading]);
+  }, [clienteLogado]);
 
   useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_carrinho", JSON.stringify(carrinho));
-    }
-  }, [carrinho, loading]);
+    localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
+  }, [adminLogado]);
 
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_categorias", JSON.stringify(categorias));
-    }
-  }, [categorias, loading]);
+  // ── Cliente Session ────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_promocoes", JSON.stringify(promocoes));
-    }
-  }, [promocoes, loading]);
-
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_listavip", JSON.stringify(listaVip));
-    }
-  }, [listaVip, loading]);
-
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_configuracoes", JSON.stringify(configuracoes));
-    }
-  }, [configuracoes, loading]);
-
-  useEffect(() => {
-    if (!loading) {
-      if (clienteLogado) {
-        localStorage.setItem("fysi_cliente", JSON.stringify(clienteLogado));
-      } else {
-        localStorage.removeItem("fysi_cliente");
-      }
-    }
-  }, [clienteLogado, loading]);
-
-  useEffect(() => {
-    if (!loading) {
-      localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
-    }
-  }, [adminLogado, loading]);
-
-  // Cliente Session actions
-  const loginCliente = (telefone: string) => {
+  const loginCliente = async (telefone: string): Promise<boolean> => {
     const cleanInput = telefone.replace(/\D/g, "");
     if (!cleanInput) return false;
 
-    // Search existing orders for this phone number
-    const matchedOrder = pedidos.find(
+    const matched = pedidos.find(
       (p) => p.cliente.telefone.replace(/\D/g, "") === cleanInput
     );
-
-    if (matchedOrder) {
+    if (matched) {
       setClienteLogado({
-        nome: matchedOrder.cliente.nome,
-        telefone: matchedOrder.cliente.telefone,
-        endereco: matchedOrder.cliente.endereco || ""
+        nome: matched.cliente.nome,
+        telefone: matched.cliente.telefone,
+        endereco: matched.cliente.endereco ?? "",
       });
       return true;
     }
-    
-    // Fallback: search initial mock data just in case
     return false;
   };
 
@@ -214,12 +231,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setClienteLogado(cliente);
   };
 
-  const logoutCliente = () => {
-    setClienteLogado(null);
-  };
+  const logoutCliente = () => setClienteLogado(null);
 
-  // Admin Session actions
-  const loginAdmin = (usuario: string, senha: string) => {
+  // ── Admin Session ──────────────────────────────────────────────────────────
+
+  const loginAdmin = (usuario: string, senha: string): boolean => {
     if (usuario.trim() === "admin" && senha === "fysi2026") {
       setAdminLogado(true);
       return true;
@@ -227,160 +243,178 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return false;
   };
 
-  const logoutAdmin = () => {
-    setAdminLogado(false);
+  const logoutAdmin = () => setAdminLogado(false);
+
+  // ── Pecas ────────────────────────────────────────────���─────────────────────
+
+  const addPeca = async (pecaData: Omit<Peca, "id" | "criadoEm">) => {
+    await apiFetch<{ id: string }>("/api/pecas", {
+      method: "POST",
+      body: JSON.stringify(pecaData),
+    });
+    // Rebuscar do banco para garantir dados completos e consistentes
+    await refetchPecas();
   };
 
-  // Pecas actions
-  const addPeca = (pecaData: Omit<Peca, "id" | "criadoEm">) => {
-    const newPeca: Peca = {
-      ...pecaData,
-      id: `peca-${Date.now()}`,
-      criadoEm: new Date().toISOString()
-    };
-    setPecas((prev) => [newPeca, ...prev]);
+  const updatePeca = async (id: string, updates: Partial<Peca>) => {
+    await apiFetch(`/api/pecas/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+    // Rebuscar do banco para refletir mudanças reais
+    await refetchPecas();
   };
 
-  const updatePeca = (id: string, updates: Partial<Peca>) => {
-    setPecas((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
-  };
-
-  const deletePeca = (id: string) => {
+  const deletePeca = async (id: string) => {
+    await apiFetch(`/api/pecas/${id}`, { method: "DELETE" });
     setPecas((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // Pedidos actions
-  const addPedido = (cliente: Cliente, cupom?: string, descontoPercentual?: number) => {
+  // ── Pedidos ────────────────────────────────────────────────────────────────
+
+  const addPedido = async (
+    cliente: Cliente,
+    _cupom?: string,
+    descontoPercentual?: number
+  ): Promise<Pedido | null> => {
     if (carrinho.length === 0) return null;
 
-    const nextNumero =
-      pedidos.length > 0 ? Math.max(...pedidos.map((o) => o.numero)) + 1 : 1205;
-
-    const subtotal = carrinho.reduce((sum, item) => sum + item.quantidade * item.precoUnitario, 0);
-    const desconto = descontoPercentual ? subtotal * (descontoPercentual / 100) : 0;
-    const total = Math.max(0, subtotal - desconto);
+    const result = await apiFetch<{ id: string; numero: number; total: number }>(
+      "/api/pedidos",
+      {
+        method: "POST",
+        body: JSON.stringify({ cliente, itens: carrinho, descontoPercentual }),
+      }
+    );
 
     const newPedido: Pedido = {
-      id: `pedido-${Date.now()}`,
-      numero: nextNumero,
+      id: result.id,
+      numero: result.numero,
       cliente,
       itens: [...carrinho],
-      total,
+      total: result.total,
       status: "pendente",
-      criadoEm: new Date().toISOString()
+      criadoEm: new Date().toISOString(),
     };
 
     setPedidos((prev) => [newPedido, ...prev]);
-    setCarrinho([]); // Clear cart
+    setCarrinho([]);
     return newPedido;
   };
 
-  const responderPedido = (id: string, status: "aprovado" | "recusado", motivoRecusa?: string) => {
-    setPedidos((prevPedidos) => {
-      const targetOrder = prevPedidos.find((p) => p.id === id);
-      if (!targetOrder || targetOrder.status !== "pendente") {
-        return prevPedidos; // Order not found or already processed
-      }
+  const responderPedido = async (
+    id: string,
+    status: "aprovado" | "recusado",
+    motivoRecusa?: string
+  ) => {
+    const targetPedido = pedidos.find((p) => p.id === id);
+    if (!targetPedido || targetPedido.status !== "pendente") return;
 
-      // 1. Update order status
-      const updatedPedidos = prevPedidos.map((p) => {
-        if (p.id === id) {
+    await apiFetch(`/api/pedidos/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, motivoRecusa, itens: targetPedido.itens }),
+    });
+
+    // Atualizar estado local de pedidos
+    setPedidos((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              status,
+              motivoRecusa: status === "recusado" ? motivoRecusa : undefined,
+              respondidoEm: new Date().toISOString(),
+            }
+          : p
+      )
+    );
+
+    // Se aprovado, debitar estoque localmente também
+    if (status === "aprovado") {
+      setPecas((prevPecas) =>
+        prevPecas.map((peca) => {
+          const itensParaPeca = targetPedido.itens.filter(
+            (item) => item.pecaId === peca.id
+          );
+          if (itensParaPeca.length === 0) return peca;
           return {
-            ...p,
-            status,
-            motivoRecusa: status === "recusado" ? motivoRecusa : undefined,
-            respondidoEm: new Date().toISOString()
-          };
-        }
-        return p;
-      });
-
-      // 2. If approved, debit stock from pieces
-      if (status === "aprovado") {
-        setPecas((prevPecas) =>
-          prevPecas.map((peca) => {
-            // Check if this piece is in the order
-            const orderItensForPeca = targetOrder.itens.filter((item) => item.pecaId === peca.id);
-            if (orderItensForPeca.length === 0) return peca;
-
-            // Update variations
-            const updatedVariacoes = peca.variacoes.map((variacao) => {
-              const matchedItem = orderItensForPeca.find((item) => item.variacaoId === variacao.id);
-              if (matchedItem) {
+            ...peca,
+            variacoes: peca.variacoes.map((v) => {
+              const item = itensParaPeca.find((i) => i.variacaoId === v.id);
+              if (item) {
                 return {
-                  ...variacao,
-                  quantidadeEstoque: Math.max(0, variacao.quantidadeEstoque - matchedItem.quantidade)
+                  ...v,
+                  quantidadeEstoque: Math.max(
+                    0,
+                    v.quantidadeEstoque - item.quantidade
+                  ),
                 };
               }
-              return variacao;
-            });
-
-            return {
-              ...peca,
-              variacoes: updatedVariacoes
-            };
-          })
-        );
-      }
-
-      return updatedPedidos;
-    });
+              return v;
+            }),
+          };
+        })
+      );
+    }
   };
 
-  // Carrinho actions
+  // ── Carrinho ───────────────────────────────────────────────────────────────
+
   const addToCart = (peca: Peca, variacaoId: string, quantidade: number) => {
     const varObj = peca.variacoes.find((v) => v.id === variacaoId);
     if (!varObj) return;
 
     setCarrinho((prev) => {
-      const existingIndex = prev.findIndex((item) => item.variacaoId === variacaoId);
+      const existingIndex = prev.findIndex(
+        (item) => item.variacaoId === variacaoId
+      );
       if (existingIndex > -1) {
         const updated = [...prev];
-        const newQty = updated[existingIndex].quantidade + quantidade;
-        // Cap quantity based on stock
-        updated[existingIndex].quantidade = Math.min(newQty, varObj.quantidadeEstoque);
-        return updated;
-      } else {
-        // Check for active category-wide promotions (not coupon code based)
-        const promo = promocoes.find(
-          (pr) => pr.ativo && pr.categoriaAlvo === peca.categoria && !pr.cupom
+        updated[existingIndex].quantidade = Math.min(
+          updated[existingIndex].quantidade + quantidade,
+          varObj.quantidadeEstoque
         );
-        const precoVigente = promo
-          ? peca.preco * (1 - promo.descontoPercentual / 100)
-          : peca.preco;
-
-        const newItem: ItemPedido = {
-          pecaId: peca.id,
-          variacaoId,
-          nomePeca: peca.nome,
-          cor: varObj.cor,
-          tamanho: varObj.tamanho,
-          quantidade: Math.min(quantidade, varObj.quantidadeEstoque),
-          precoUnitario: precoVigente
-        };
-        return [...prev, newItem];
+        return updated;
       }
+
+      const promo = promocoes.find(
+        (pr) => pr.ativo && pr.categoriaAlvo === peca.categoria && !pr.cupom
+      );
+      const precoVigente = promo
+        ? peca.preco * (1 - promo.descontoPercentual / 100)
+        : peca.preco;
+
+      const newItem: ItemPedido = {
+        pecaId: peca.id,
+        variacaoId,
+        nomePeca: peca.nome,
+        cor: varObj.cor,
+        tamanho: varObj.tamanho,
+        quantidade: Math.min(quantidade, varObj.quantidadeEstoque),
+        precoUnitario: precoVigente,
+      };
+      return [...prev, newItem];
     });
   };
 
   const removeFromCart = (variacaoId: string) => {
-    setCarrinho((prev) => prev.filter((item) => item.variacaoId !== variacaoId));
+    setCarrinho((prev) =>
+      prev.filter((item) => item.variacaoId !== variacaoId)
+    );
   };
 
   const updateCartQuantity = (variacaoId: string, quantidade: number) => {
     setCarrinho((prev) =>
       prev.map((item) => {
         if (item.variacaoId === variacaoId) {
-          // Find the corresponding piece to verify stock limit
           const targetPeca = pecas.find((p) => p.id === item.pecaId);
-          const targetVar = targetPeca?.variacoes.find((v) => v.id === variacaoId);
+          const targetVar = targetPeca?.variacoes.find(
+            (v) => v.id === variacaoId
+          );
           const maxStock = targetVar ? targetVar.quantidadeEstoque : 999;
-          
           return {
             ...item,
-            quantidade: Math.min(Math.max(1, quantidade), maxStock)
+            quantidade: Math.min(Math.max(1, quantidade), maxStock),
           };
         }
         return item;
@@ -388,67 +422,112 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     );
   };
 
-  const clearCart = () => {
-    setCarrinho([]);
-  };
+  const clearCart = () => setCarrinho([]);
 
-  // Categorias Actions
-  const addCategoria = (nome: string) => {
-    const nova: Categoria = {
-      id: `cat-${Date.now()}`,
-      nome,
-      criadoEm: new Date().toISOString()
-    };
+  // ── Categorias ─────────────────────────────────────────────────────────────
+
+  const addCategoria = async (nome: string) => {
+    const { id } = await apiFetch<{ id: string }>("/api/categorias", {
+      method: "POST",
+      body: JSON.stringify({ nome }),
+    });
+    const nova: Categoria = { id, nome, criadoEm: new Date().toISOString() };
     setCategorias((prev) => [...prev, nova]);
   };
 
-  const deleteCategoria = (id: string) => {
+  const deleteCategoria = async (id: string) => {
+    await apiFetch("/api/categorias", {
+      method: "DELETE",
+      body: JSON.stringify({ id }),
+    });
     setCategorias((prev) => prev.filter((c) => c.id !== id));
   };
 
-  // Promocoes Actions
-  const addPromocao = (promocaoData: Omit<Promocao, "id" | "criadoEm">) => {
+  // ── Promoções ──────────────────────────────────────────────────────────────
+
+  const addPromocao = async (
+    promocaoData: Omit<Promocao, "id" | "criadoEm">
+  ) => {
+    const { id } = await apiFetch<{ id: string }>("/api/promocoes", {
+      method: "POST",
+      body: JSON.stringify(promocaoData),
+    });
     const nova: Promocao = {
       ...promocaoData,
-      id: `promo-${Date.now()}`,
-      criadoEm: new Date().toISOString()
+      id,
+      criadoEm: new Date().toISOString(),
     };
     setPromocoes((prev) => [nova, ...prev]);
   };
 
-  const updatePromocao = (id: string, updates: Partial<Promocao>) => {
+  const updatePromocao = async (id: string, updates: Partial<Promocao>) => {
+    await apiFetch(`/api/promocoes/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
     setPromocoes((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
     );
   };
 
-  const deletePromocao = (id: string) => {
+  const deletePromocao = async (id: string) => {
+    await apiFetch(`/api/promocoes/${id}`, { method: "DELETE" });
     setPromocoes((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // Lista VIP Actions
-  const inscreverVip = (inscricaoData: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">) => {
-    const novaInscricao: InscricaoVIP = {
+  // ── Lista VIP ──────────────────────────────────────────────────────────────
+
+  const inscreverVip = async (
+    inscricaoData: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
+  ) => {
+    const { id } = await apiFetch<{ id: string }>("/api/lista-vip", {
+      method: "POST",
+      body: JSON.stringify(inscricaoData),
+    });
+    const nova: InscricaoVIP = {
       ...inscricaoData,
-      id: `vip-${Date.now()}`,
+      id,
       criadoEm: new Date().toISOString(),
-      notificado: false
+      notificado: false,
     };
-    setListaVip((prev) => [novaInscricao, ...prev]);
+    setListaVip((prev) => [nova, ...prev]);
   };
 
-  const toggleNotificadoVip = (id: string) => {
+  const toggleNotificadoVip = async (id: string) => {
+    const item = listaVip.find((v) => v.id === id);
+    if (!item) return;
+    const novoValor = !item.notificado;
+    await apiFetch(`/api/lista-vip/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ notificado: novoValor }),
+    });
     setListaVip((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, notificado: !item.notificado } : item))
+      prev.map((v) => (v.id === id ? { ...v, notificado: novoValor } : v))
     );
   };
 
-  const deleteVip = (id: string) => {
-    setListaVip((prev) => prev.filter((item) => item.id !== id));
+  const deleteVip = async (id: string) => {
+    await apiFetch(`/api/lista-vip/${id}`, { method: "DELETE" });
+    setListaVip((prev) => prev.filter((v) => v.id !== id));
   };
 
-  const updateConfiguracoes = (updates: Partial<ConfiguracoesLoja>) => {
+  // ── Configurações ──────────────────────────────────────────────────────────
+
+  const updateConfiguracoes = async (updates: Partial<ConfiguracoesLoja>) => {
+    await apiFetch("/api/configuracoes", {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
     setConfiguracoes((prev) => ({ ...prev, ...updates }));
+  };
+
+  const updateBanner = async (updates: Partial<Banner>) => {
+    const next = { ...banner, ...updates };
+    await apiFetch("/api/banners", {
+      method: "PUT",
+      body: JSON.stringify(next),
+    });
+    setBanner(next);
   };
 
   return (
@@ -468,6 +547,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         addPeca,
         updatePeca,
         deletePeca,
+        refetchPecas,
         addPedido,
         responderPedido,
         addToCart,
@@ -486,7 +566,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         toggleNotificadoVip,
         deleteVip,
         configuracoes,
-        updateConfiguracoes
+        updateConfiguracoes,
+        banner,
+        updateBanner,
       }}
     >
       {children}

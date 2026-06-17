@@ -125,7 +125,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   };
 
   // Submit form
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -154,9 +154,9 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
     };
 
     if (isEditMode && pecaToEdit) {
-      updatePeca(pecaToEdit.id, pecaData);
+      await updatePeca(pecaToEdit.id, pecaData);
     } else {
-      addPeca(pecaData);
+      await addPeca(pecaData);
     }
 
     router.push("/admin/pecas");
