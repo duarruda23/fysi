@@ -1,0 +1,204 @@
+Quero que você construa o frontend completo de um sistema de gestão de pedidos e estoque para uma loja de roupas (moda), com dois tipos de acesso: Admin e Ecommerce (cliente). Por enquanto, não conecte banco de dados real — use dados mockados (JSON local / estado em memória via Context ou Zustand), mas estruture o código (tipos, funções de acesso a dados, nomes de variáveis) como se fosse plugar Supabase/Postgres depois, para facilitar a migração.
+
+Stack
+
+
+Next.js (App Router) + TypeScript
+Tailwind CSS + shadcn/ui para os componentes
+Estado global simples (Context API ou Zustand) simulando o "banco de dados" em memória
+Responsivo (mobile-first), já que boa parte do tráfego do ecommerce vem de celular
+
+
+Modelo de dados (TypeScript types)
+
+Crie os types abaixo como base de tudo:
+
+tstype Tamanho = "PP" | "P" | "M" | "G" | "GG" | "XG";
+
+interface VariacaoPeca {
+  id: string;
+  cor: string;
+  corHex?: string; // pra exibir um swatch de cor
+  tamanho: Tamanho;
+  quantidadeEstoque: number;
+}
+
+interface Peca {
+  id: string;
+  nome: string;
+  referencia: string; // SKU
+  descricao: string;
+  categoria: string; // ex: "Vestidos", "Blusas", "Calças"
+  preco: number;
+  fotos: string[]; // urls
+  variacoes: VariacaoPeca[]; // combinações cor+tamanho, cada uma com seu estoque
+  ativo: boolean;
+  criadoEm: string;
+}
+
+type StatusPedido = "pendente" | "aprovado" | "recusado";
+
+interface ItemPedido {
+  pecaId: string;
+  variacaoId: string;
+  nomePeca: string;
+  cor: string;
+  tamanho: Tamanho;
+  quantidade: number;
+  precoUnitario: number;
+}
+
+interface Pedido {
+  id: string;
+  numero: number;
+  cliente: {
+    nome: string;
+    telefone: string;
+    endereco?: string;
+  };
+  itens: ItemPedido[];
+  total: number;
+  status: StatusPedido;
+  motivoRecusa?: string;
+  criadoEm: string;
+  respondidoEm?: string;
+}
+
+Regra de negócio central
+
+
+O ecommerce não processa pagamento. O cliente monta o carrinho e "finaliza o pedido", o que cria um Pedido com status pendente.
+Esse pedido aparece na área Admin como um chamado a ser analisado.
+Quando o admin aprova, o sistema deve debitar a quantidade de cada item da quantidadeEstoque da variação correspondente (simulação em memória por agora).
+Quando o admin recusa, deve ser possível registrar um motivo, e o estoque não é alterado.
+Pedido aprovado ou recusado não pode ser revertido (mostrar como histórico).
+
+
+Telas do ADMIN
+
+
+Dashboard
+
+Cards de resumo: total de peças ativas, total de pedidos pendentes, peças com estoque baixo (defina um limite, ex: ≤ 5 unidades em alguma variação), faturamento dos pedidos aprovados no mês.
+Lista rápida dos últimos pedidos pendentes com botão de acesso rápido.
+
+
+
+Peças (listagem)
+
+Tabela/grid com busca por nome ou referência, filtro por categoria.
+Colunas: foto, nome, referência, categoria, preço, estoque total (soma das variações), status (ativo/inativo).
+Botão "Nova peça" e ação de editar/inativar por linha.
+
+
+
+Cadastro/Edição de peça
+
+Campos: nome, referência, categoria (select), descrição, preço, upload de fotos (mock de upload, pode usar input de URL por enquanto).
+Seção de variações: adicionar múltiplas combinações de cor + tamanho, cada uma com seu campo de quantidade em estoque. Permitir adicionar/remover variações dinamicamente.
+Botão salvar.
+
+
+
+Pedidos (lista de chamados)
+
+Tabela com número do pedido, cliente, total, data, status (badge colorido: pendente=amarelo, aprovado=verde, recusado=vermelho).
+Filtro por status.
+Clique abre o detalhe.
+
+
+
+Detalhe do pedido
+
+Dados do cliente, lista de itens (peça, cor, tamanho, quantidade, subtotal), total.
+Se pendente: botões "Aprovar" e "Recusar" (recusar abre um campo de motivo).
+Se já respondido: mostrar status final, motivo (se recusado) e data da resposta — sem opção de alterar.
+
+
+
+
+
+Telas do ECOMMERCE (cliente)
+
+
+Vitrine / Home
+
+Banner/destaque, grid de peças em destaque ou mais recentes, navegação por categorias.
+
+
+
+Catálogo (listagem de peças)
+
+Grid de produtos com foto, nome, preço.
+Filtros: categoria, cor, tamanho, faixa de preço.
+Mostrar apenas peças com ativo: true e que tenham ao menos uma variação com estoque > 0.
+
+
+
+Página do produto
+
+Galeria de fotos, nome, descrição, preço.
+Seleção de cor (swatches) e tamanho (chips) — desabilitar combinações sem estoque.
+Quantidade e botão "Adicionar ao carrinho".
+
+
+
+Carrinho
+
+Lista de itens com cor/tamanho/quantidade, opção de remover ou ajustar quantidade, total geral.
+Botão "Finalizar pedido".
+
+
+
+Finalizar pedido
+
+Formulário simples: nome, telefone/WhatsApp, endereço (opcional, dependendo se é retirada ou entrega).
+Sem campo de pagamento.
+Ao confirmar, gera o Pedido com status pendente e redireciona para a tela de confirmação.
+
+
+
+Confirmação
+
+"Pedido nº X recebido! Aguardando aprovação." com resumo do pedido.
+
+
+
+Meus pedidos (simplificado)
+
+Consulta por telefone (sem login completo por enquanto): mostra os pedidos feitos por aquele telefone com status atualizado.
+
+
+
+
+
+Estilo visual
+
+
+Visual de e-commerce de moda: clean, elegante, bastante espaço em branco, tipografia com personalidade (não usar só a fonte padrão do sistema), boas fotos em destaque.
+Área admin pode ser mais utilitária/dashboard (estilo painel de controle, com sidebar de navegação), separada visualmente do ecommerce.
+
+
+Estrutura de pastas sugerida
+
+/app
+  /admin
+    /dashboard
+    /pecas
+    /pecas/[id]
+    /pedidos
+    /pedidos/[id]
+  /(loja)
+    /page.tsx (vitrine)
+    /produtos
+    /produtos/[id]
+    /carrinho
+    /checkout
+    /meus-pedidos
+/components
+/lib
+  /types.ts
+  /mock-data.ts
+  /store.ts (estado global simulando o "banco")
+
+Gere o projeto completo, com dados mockados já populados (pelo menos 10 peças de exemplo com variações de cor/tamanho e 3-4 pedidos de exemplo em status diferentes), para eu já conseguir navegar e testar o fluxo completo: cadastrar peça → ver no catálogo → fazer pedido → aprovar no admin → ver estoque debitado.

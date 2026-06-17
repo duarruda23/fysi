@@ -1,0 +1,648 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ShoppingBag, Check, AlertTriangle, Minus, Plus, Star } from "lucide-react";
+import { useStore } from "@/lib/store";
+import type { Tamanho, VariacaoPeca } from "@/lib/types";
+import { trackAddToCartEvent } from "@/components/AnalyticsScripts";
+
+function currency(value: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+}
+
+export default function ProductDetailPage({ params }: { params: { id: string } }) {
+  const router = useRouter();
+  const { pecas, addToCart, promocoes, inscreverVip, clienteLogado } = useStore();
+
+  const peca = useMemo(() => {
+    return pecas.find((p) => p.id === params.id);
+  }, [pecas, params.id]);
+
+  // States
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [quantidadesGrade, setQuantidadesGrade] = useState<Record<Tamanho, number>>({
+    PP: 0,
+    P: 0,
+    M: 0,
+    G: 0,
+    GG: 0,
+    XG: 0
+  });
+  const [vipSelectedSize, setVipSelectedSize] = useState<Tamanho | null>(null);
+  const [addedMessage, setAddedMessage] = useState(false);
+  const [infoTab, setInfoTab] = useState<"detalhes" | "envio" | "devolucoes">("detalhes");
+
+  // VIP Waiting List States
+  const [vipName, setVipName] = useState("");
+  const [vipPhone, setVipPhone] = useState("");
+  const [vipSuccess, setVipSuccess] = useState(false);
+
+  // Auto-prefill VIP name and phone if clienteLogado changes
+  useEffect(() => {
+    if (clienteLogado) {
+      setVipName(clienteLogado.nome);
+      setVipPhone(clienteLogado.telefone);
+    }
+  }, [clienteLogado]);
+
+  // Get unique colors available
+  const availableColors = useMemo(() => {
+    if (!peca) return [];
+    const list: { name: string; hex?: string }[] = [];
+    peca.variacoes.forEach((v) => {
+      if (!list.some((c) => c.name === v.cor)) {
+        list.push({ name: v.cor, hex: v.corHex });
+      }
+    });
+    return list;
+  }, [peca]);
+
+  // Handle fallback active color without triggers
+  const activeColor = selectedColor || (availableColors[0]?.name ?? null);
+
+  // Get sizes that have stock for the selected color
+  const sizesForSelectedColor = useMemo(() => {
+    if (!peca || !activeColor) return [];
+    return peca.variacoes
+      .filter((v) => v.cor === activeColor && v.quantidadeEstoque > 0)
+      .map((v) => v.tamanho);
+  }, [peca, activeColor]);
+
+  // Get all sizes available for the active color (even if stock is 0)
+  const sizesForColorExist = useMemo(() => {
+    if (!peca || !activeColor) return [];
+    return peca.variacoes
+      .filter((v) => v.cor === activeColor)
+      .map((v) => v.tamanho);
+  }, [peca, activeColor]);
+
+  // All sizes possible for this piece
+  const allSizesForPiece = useMemo(() => {
+    if (!peca) return [];
+    const set = new Set<Tamanho>();
+    peca.variacoes.forEach((v) => set.add(v.tamanho));
+    return Array.from(set);
+  }, [peca]);
+
+  // Active promotion for this category
+  const activePromo = useMemo(() => {
+    if (!peca) return null;
+    return promocoes.find(
+      (p) => p.ativo && p.categoriaAlvo === peca.categoria && !p.cupom
+    );
+  }, [promocoes, peca]);
+
+  const precoComDesconto = useMemo(() => {
+    if (!peca) return 0;
+    if (!activePromo) return peca.preco;
+    return peca.preco * (1 - activePromo.descontoPercentual / 100);
+  }, [peca, activePromo]);
+
+  // Gallery Photos logic (up to 5 photos)
+  const displayPhotos = useMemo(() => {
+    if (!peca) return [];
+    const photos = [...peca.fotos];
+    while (photos.length < 5) {
+      if (photos.length === 1) {
+        photos.push(peca.fotos[0]); // Duplicate zoom detail
+      } else if (photos.length === 2) {
+        photos.push("/brand/logo-ouro.png");
+      } else if (photos.length === 3) {
+        photos.push("/brand/logo-preto.png");
+      } else {
+        photos.push(peca.fotos[0]);
+      }
+    }
+    return photos;
+  }, [peca]);
+
+  // Reset quantities on activeColor change
+  useEffect(() => {
+    setQuantidadesGrade({
+      PP: 0,
+      P: 0,
+      M: 0,
+      G: 0,
+      GG: 0,
+      XG: 0
+    });
+    setVipSelectedSize(null);
+    setVipSuccess(false);
+  }, [activeColor]);
+
+  const totalPecasSelecionadas = useMemo(() => {
+    return Object.values(quantidadesGrade).reduce((sum, q) => sum + q, 0);
+  }, [quantidadesGrade]);
+
+  const valorTotalGrade = useMemo(() => {
+    return totalPecasSelecionadas * precoComDesconto;
+  }, [totalPecasSelecionadas, precoComDesconto]);
+
+  // Handle Add Grade to Cart
+  const handleAddGradeToCart = () => {
+    if (totalPecasSelecionadas === 0 || !peca) return;
+
+    Object.entries(quantidadesGrade).forEach(([size, qty]) => {
+      if (qty > 0) {
+        const vari = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === size);
+        if (vari) {
+          addToCart(peca, vari.id, qty);
+          // Trigger analytics
+          trackAddToCartEvent({
+            id: peca.id,
+            name: peca.nome,
+            price: precoComDesconto,
+            quantity: qty,
+            color: activeColor || "",
+            size: size
+          });
+        }
+      }
+    });
+
+    setAddedMessage(true);
+    setTimeout(() => {
+      setAddedMessage(false);
+    }, 4000);
+  };
+
+  // Handle Buy Now (Grade)
+  const handleBuyNowGrade = () => {
+    if (totalPecasSelecionadas === 0 || !peca) return;
+
+    Object.entries(quantidadesGrade).forEach(([size, qty]) => {
+      if (qty > 0) {
+        const vari = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === size);
+        if (vari) {
+          addToCart(peca, vari.id, qty);
+          // Trigger analytics
+          trackAddToCartEvent({
+            id: peca.id,
+            name: peca.nome,
+            price: precoComDesconto,
+            quantity: qty,
+            color: activeColor || "",
+            size: size
+          });
+        }
+      }
+    });
+
+    router.push("/carrinho");
+  };
+
+  // Handle VIP registration
+  const handleVipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!peca || !activeColor || !vipSelectedSize) return;
+
+    const targetVar = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === vipSelectedSize);
+    if (!targetVar) return;
+
+    inscreverVip({
+      clienteNome: vipName.trim(),
+      clienteTelefone: vipPhone.trim(),
+      pecaId: peca.id,
+      pecaNome: peca.nome,
+      variacaoId: targetVar.id,
+      cor: activeColor,
+      tamanho: vipSelectedSize
+    });
+
+    setVipSuccess(true);
+    setTimeout(() => {
+      setVipSuccess(false);
+      setVipSelectedSize(null);
+    }, 5000);
+  };
+
+  // If piece not found or inactive
+  if (!peca || !peca.ativo) {
+    return (
+      <div className="py-20 text-center space-y-4">
+        <h2 className="font-serif text-3xl font-bold text-ink">Peça não encontrada</h2>
+        <p className="text-coal/60">O produto que você está tentando acessar não existe ou está indisponível.</p>
+        <Link
+          href="/produtos"
+          className="inline-flex h-11 items-center gap-2 rounded-md bg-ink px-6 text-sm font-semibold text-white"
+        >
+          <ArrowLeft size={16} /> Voltar ao Catálogo
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8 pb-12">
+      {/* Breadcrumbs Navigation */}
+      <nav className="flex items-center gap-1.5 text-xs text-coal/50 font-medium">
+        <Link href="/produtos" className="hover:text-ink transition-colors">Produtos</Link>
+        <span>&gt;</span>
+        <span className="capitalize text-coal/60">{peca.categoria}</span>
+        <span>&gt;</span>
+        <span className="text-ink font-semibold">{peca.nome}</span>
+      </nav>
+
+      {/* Image Grid Gallery */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Large Left Image */}
+        <div className="relative aspect-square overflow-hidden rounded-xl border border-ink/10 bg-linen shadow-sm group">
+          <img
+            src={displayPhotos[0] || "/brand/logo-preto.png"}
+            alt={peca.nome}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
+          />
+        </div>
+        {/* 2x2 Grid of Thumbnails */}
+        <div className="grid grid-cols-2 gap-3 aspect-square">
+          {displayPhotos.slice(1, 5).map((photo, idx) => (
+            <div
+              key={idx}
+              className="relative overflow-hidden rounded-xl border border-ink/10 bg-linen shadow-sm group"
+            >
+              <img
+                src={photo}
+                alt=""
+                className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-102 ${
+                  photo.includes("logo") ? "p-8 object-contain opacity-60 bg-pearl" : ""
+                }`}
+              />
+              {idx === 3 && (
+                <button
+                  onClick={() => alert("Exibindo todas as fotos em alta resolução da galeria Fysi.")}
+                  className="absolute bottom-3 right-3 bg-white hover:bg-pearl text-ink text-[11px] font-bold px-3 py-1.5 rounded border border-ink/10 shadow-sm transition-all active:scale-95 whitespace-nowrap"
+                >
+                  Ver todas as fotos
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Two-Column Product Info Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">
+        {/* Left Column: Title, Description, Details and Tabs (7 columns) */}
+        <div className="lg:col-span-7 space-y-6">
+          <div>
+            <h1 className="font-serif text-3xl font-bold leading-tight text-ink md:text-4xl">
+              {peca.nome}
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-coal/75">
+              {peca.descricao}
+            </p>
+          </div>
+
+          {/* Bullet points section */}
+          <div className="pt-2">
+            <ul className="list-disc pl-5 text-sm text-coal/70 space-y-2">
+              <li>Desenvolvido em alfaiataria premium de linho misto de alto padrão.</li>
+              <li>Estrutura leve com costuras francesas e acabamento interno limpo.</li>
+              <li>Bolsos laterais embutidos e fechamento traseiro invisível.</li>
+              <li>Fibra natural biodegradável produzida eticamente no Brasil.</li>
+            </ul>
+          </div>
+
+          {/* Tabs Section */}
+          <div className="pt-4">
+            <div className="flex border-b border-ink/10 gap-6">
+              <button
+                onClick={() => setInfoTab("detalhes")}
+                className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                  infoTab === "detalhes" ? "border-ink text-ink" : "border-transparent text-coal/45 hover:text-ink/80"
+                }`}
+              >
+                Detalhes
+              </button>
+              <button
+                onClick={() => setInfoTab("envio")}
+                className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                  infoTab === "envio" ? "border-ink text-ink" : "border-transparent text-coal/45 hover:text-ink/80"
+                }`}
+              >
+                Envio
+              </button>
+              <button
+                onClick={() => setInfoTab("devolucoes")}
+                className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                  infoTab === "devolucoes" ? "border-ink text-ink" : "border-transparent text-coal/45 hover:text-ink/80"
+                }`}
+              >
+                Devoluções
+              </button>
+            </div>
+
+            <div className="py-4 text-xs leading-relaxed text-coal/70 transition-all duration-300">
+              {infoTab === "detalhes" && (
+                <p>
+                  A modelagem Fysi foi desenhada para se adaptar confortavelmente ao corpo, proporcionando leveza e frescor.
+                  <br />
+                  <span className="font-semibold text-ink">Composição:</span> 55% Linho, 45% Viscose Premium. Ideal para ocasiões casuais refinadas e eventos especiais ao ar livre.
+                </p>
+              )}
+              {infoTab === "envio" && (
+                <p>
+                  Oferecemos entrega expressa para todo o Brasil ou retirada imediata no nosso showroom físico.
+                  <br />
+                  <span className="font-semibold text-ink">Prazos:</span> Frete grátis para compras acima de R$ 400. Pedidos aprovados até as 14h são postados no mesmo dia útil.
+                </p>
+              )}
+              {infoTab === "devolucoes" && (
+                <p>
+                  Garantimos devolução sem burocracia em até 7 dias corridos após o recebimento da encomenda.
+                  <br />
+                  <span className="font-semibold text-ink">Regra:</span> A peça deve estar com a etiqueta original fixada e sem sinais de uso. Entre em contato pelo WhatsApp de suporte para iniciar o processo.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Sidebar Panel (5 columns) */}
+        <div className="lg:col-span-5 bg-pearl/30 rounded-xl border border-ink/10 p-6 shadow-line self-start space-y-6">
+          {/* Price and Ratings */}
+          <div className="space-y-2">
+            {activePromo ? (
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-ink">{currency(precoComDesconto)}</span>
+                  <span className="text-sm text-coal/40 line-through">{currency(peca.preco)}</span>
+                </div>
+                <span className="inline-block text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                  {activePromo.nome} (-{activePromo.descontoPercentual}%)
+                </span>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold text-ink">{currency(peca.preco)}</p>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center text-gold">
+                <Star size={14} className="fill-gold" />
+                <Star size={14} className="fill-gold" />
+                <Star size={14} className="fill-gold" />
+                <Star size={14} className="fill-gold" />
+                <Star size={14} className="text-coal/20" />
+              </div>
+              <span className="text-[11px] font-semibold text-coal/50">(4.0 estrelas) • 12 avaliações</span>
+            </div>
+          </div>
+
+          {/* Color Variant selection */}
+          <div className="space-y-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-coal/50 block">
+              Cor: <span className="text-ink font-bold">{activeColor || "Selecione"}</span>
+            </span>
+            <div className="flex flex-wrap gap-2.5">
+              {availableColors.map((color) => {
+                const isSelected = activeColor === color.name;
+                return (
+                  <button
+                    key={color.name}
+                    onClick={() => {
+                      setSelectedColor(color.name);
+                    }}
+                    className={`group relative flex h-8 w-8 items-center justify-center rounded-full border transition-all ${
+                      isSelected ? "ring-2 ring-gold border-white scale-105" : "border-ink/10"
+                    }`}
+                    style={{ backgroundColor: color.hex || "#ccc" }}
+                    title={color.name}
+                  >
+                    <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-all bg-ink text-white text-[9px] px-1.5 py-0.5 rounded whitespace-nowrap shadow z-10">
+                      {color.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Size Variant selection */}
+          <div className="space-y-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-coal/50 block">
+              Grade de Tamanhos (Preços de Atacado)
+            </span>
+            <div className="border border-ink/10 rounded-lg overflow-hidden bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-pearl/50 border-b border-ink/10 text-[10px] font-bold uppercase tracking-wider text-coal/60">
+                    <th className="py-2 px-3">Tam</th>
+                    <th className="py-2 px-3 text-right">Estoque</th>
+                    <th className="py-2 px-3 text-center">Quant.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allSizesForPiece.map((size) => {
+                    // Find the variation for this size and color
+                    const vari = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === size);
+                    const stock = vari ? vari.quantidadeEstoque : 0;
+                    
+                    return (
+                      <tr key={size} className="border-b border-ink/5 text-xs hover:bg-pearl/20 transition-colors">
+                        <td className="py-2 px-3 font-semibold text-ink">{size}</td>
+                        <td className="py-2 px-3 text-right">
+                          {stock > 0 ? (
+                            <span className={`font-medium text-[11px] ${stock <= 3 ? "text-clay" : "text-coal/60"}`}>
+                              {stock} un.
+                            </span>
+                          ) : (
+                            <span className="text-red-500 font-semibold text-[11px]">Esgotado</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3">
+                          {stock > 0 ? (
+                            <div className="flex items-center justify-center gap-1.5 mx-auto w-24 border border-ink/10 rounded bg-white py-0.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuantidadesGrade(prev => ({
+                                    ...prev,
+                                    [size]: Math.max(0, prev[size] - 1)
+                                  }));
+                                }}
+                                className="px-1.5 py-0.5 text-coal/50 hover:text-ink"
+                              >
+                                <Minus size={10} />
+                              </button>
+                              <input
+                                type="number"
+                                min="0"
+                                max={stock}
+                                value={quantidadesGrade[size]}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setQuantidadesGrade(prev => ({
+                                    ...prev,
+                                    [size]: Math.min(Math.max(0, val), stock)
+                                  }));
+                                }}
+                                className="w-8 text-center text-xs font-bold text-ink bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuantidadesGrade(prev => ({
+                                    ...prev,
+                                    [size]: Math.min(stock, prev[size] + 1)
+                                  }));
+                                }}
+                                className="px-1.5 py-0.5 text-coal/50 hover:text-ink"
+                              >
+                                <Plus size={10} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setVipSelectedSize(size);
+                                  setVipSuccess(false);
+                                }}
+                                className="text-[10px] font-bold text-gold hover:underline"
+                              >
+                                Lista VIP
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Selected Summary */}
+          {totalPecasSelecionadas > 0 && (
+            <div className="bg-pearl/50 rounded-lg p-3 border border-ink/10 flex items-center justify-between text-xs animate-fade-in">
+              <div>
+                <p className="text-coal/60">Total selecionado:</p>
+                <p className="font-bold text-ink">{totalPecasSelecionadas} {totalPecasSelecionadas === 1 ? "peça" : "peças"}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-coal/60">Valor total:</p>
+                <p className="font-bold text-gold text-sm">{currency(valorTotalGrade)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={handleAddGradeToCart}
+              disabled={totalPecasSelecionadas === 0}
+              className={`w-full h-11 text-sm font-semibold rounded-md flex items-center justify-center gap-2 transition-all shadow-sm ${
+                totalPecasSelecionadas > 0 
+                  ? "bg-ink hover:bg-coal text-white active:scale-98" 
+                  : "bg-ink/5 text-coal/35 cursor-not-allowed"
+              }`}
+            >
+              Adicionar lote ao carrinho
+            </button>
+
+            <button
+              onClick={handleBuyNowGrade}
+              disabled={totalPecasSelecionadas === 0}
+              className={`w-full h-11 text-sm font-bold rounded-md border flex items-center justify-center gap-2 transition-all ${
+                totalPecasSelecionadas > 0 
+                  ? "bg-white hover:bg-pearl text-ink border-ink active:scale-98" 
+                  : "border-ink/5 text-coal/35 bg-transparent cursor-not-allowed"
+              }`}
+            >
+              Comprar lote agora
+            </button>
+          </div>
+
+          {/* VIP waitlist form */}
+          {vipSelectedSize && (
+            <div className="rounded-lg bg-gold/10 border border-gold/25 p-4 space-y-2.5 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-ink flex items-center gap-1.5">
+                  <Star size={14} className="fill-gold text-gold shrink-0" />
+                  Lista VIP - Tam. {vipSelectedSize}
+                </h4>
+                <button 
+                  type="button" 
+                  onClick={() => setVipSelectedSize(null)}
+                  className="text-[10px] text-coal/50 hover:text-ink font-bold"
+                >
+                  Fechar
+                </button>
+              </div>
+              <p className="text-[11px] text-coal/70 leading-relaxed">
+                Este tamanho está esgotado temporariamente nesta cor. Cadastre seu nome e WhatsApp para ser notificado com prioridade na reposição de estoque!
+              </p>
+
+              {vipSuccess ? (
+                <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse">
+                  <Check size={14} /> Inscrição realizada! Avisaremos você no WhatsApp.
+                </div>
+              ) : (
+                <form onSubmit={handleVipSubmit} className="space-y-3 pt-1">
+                  <div className="space-y-1">
+                    <label htmlFor="vip-name" className="text-[9px] font-bold uppercase tracking-wider text-coal/60 block">
+                      Seu Nome
+                    </label>
+                    <input
+                      type="text"
+                      id="vip-name"
+                      required
+                      value={vipName}
+                      onChange={(e) => setVipName(e.target.value)}
+                      placeholder="Ex: Marina Torres"
+                      className="w-full h-9 bg-white border border-ink/10 rounded px-2.5 text-xs text-ink outline-none focus:border-ink"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label htmlFor="vip-phone" className="text-[9px] font-bold uppercase tracking-wider text-coal/60 block">
+                      WhatsApp / Telefone
+                    </label>
+                    <input
+                      type="text"
+                      id="vip-phone"
+                      required
+                      value={vipPhone}
+                      onChange={(e) => setVipPhone(e.target.value)}
+                      placeholder="Ex: (11) 99999-8888"
+                      className="w-full h-9 bg-white border border-ink/10 rounded px-2.5 text-xs text-ink outline-none focus:border-ink"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full h-9 bg-ink hover:bg-coal text-white text-xs font-bold rounded transition-all active:scale-97 shadow-sm"
+                  >
+                    Entrar na Lista VIP
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Success Dialog Banner */}
+          {addedMessage && (
+            <div className="rounded-lg border border-moss/20 bg-moss/5 p-4 flex items-center gap-3 text-moss text-xs font-semibold animate-fade-in shadow-sm">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-moss text-white">
+                <Check size={14} />
+              </div>
+              <div className="flex-1">
+                <p className="text-ink">Lote adicionado com sucesso!</p>
+                <div className="mt-1 flex gap-2.5">
+                  <Link href="/carrinho" className="text-[11px] text-gold hover:underline">
+                    Ver Carrinho
+                  </Link>
+                  <span className="text-ink/10">|</span>
+                  <Link href="/produtos" className="text-[11px] text-coal/70 hover:underline">
+                    Continuar Comprando
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
