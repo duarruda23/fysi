@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Lock, User, KeyRound, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Lock, User, KeyRound, CheckCircle2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import ClientOnly from "@/components/ClientOnly";
 
@@ -140,15 +140,7 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Credentials Helper Box */}
-          <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-[11px] text-amber-800 leading-normal space-y-1">
-            <p className="font-bold flex items-center gap-1">
-              <AlertCircle size={12} />
-              Credenciais de Acesso (Teste):
-            </p>
-            <p><strong>Usuário:</strong> <code className="bg-amber-100/60 px-1 rounded font-mono">admin</code></p>
-            <p><strong>Senha:</strong> <code className="bg-amber-100/60 px-1 rounded font-mono">fysi2026</code></p>
-          </div>
+
         </div>
 
         {/* Back to store link */}

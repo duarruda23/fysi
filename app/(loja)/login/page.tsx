@@ -172,20 +172,7 @@ function CustomerLoginContent() {
               <ArrowRight size={15} />
             </button>
 
-            {/* Helper tips for testing */}
-            <div className="pt-4 border-t border-ink/5 mt-4 space-y-2">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-gold">
-                Dica de Teste (Mock accounts):
-              </p>
-              <p className="text-[11px] text-coal/55 leading-relaxed">
-                Você pode utilizar qualquer um dos telefones dos clientes de exemplo para entrar e ver os históricos salvos:
-              </p>
-              <ul className="text-[11px] text-ink font-mono space-y-1 list-disc pl-4">
-                <li>Marina Torres: <span className="font-bold select-all">(11) 99912-4300</span></li>
-                <li>Bianca Prado: <span className="font-bold select-all">(21) 98871-9021</span></li>
-                <li>Clara Mendes: <span className="font-bold select-all">(31) 97712-8080</span></li>
-              </ul>
-            </div>
+
           </form>
         ) : (
           /* Register Form */
