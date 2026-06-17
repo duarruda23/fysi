@@ -17,7 +17,13 @@ export interface Cliente {
   nome: string;
   email: string;
   telefone: string;
-  // campos opcionais usados no addPedido
+}
+
+// Dados do cliente usados na criação de pedidos (id não é necessário aqui)
+export interface ClientePedidoInput {
+  nome: string;
+  email?: string;
+  telefone: string;
   endereco?: string;
   clienteId?: string;
 }
@@ -48,7 +54,7 @@ interface StoreContextProps {
 
   // Pedidos Actions
   addPedido: (
-    cliente: Cliente,
+    cliente: ClientePedidoInput,
     cupom?: string,
     descontoPercentual?: number
   ) => Promise<Pedido | null>;
@@ -212,7 +218,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
   }, [adminLogado]);
 
-  // ── Cliente Session ────────────────────────────────────────────────────────
+  // ── Cliente Session ────────────────────────────────────────────��───────────
 
   const refetchCliente = useCallback(async () => {
     try {
@@ -305,7 +311,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ── Pedidos ────────────────────────────────────────────────────────────────
 
   const addPedido = async (
-    cliente: Cliente,
+    cliente: ClientePedidoInput,
     _cupom?: string,
     descontoPercentual?: number
   ): Promise<Pedido | null> => {
