@@ -34,7 +34,7 @@ function CustomerLoginContent() {
     }
   }, [clienteLogado, router, redirectPath]);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setSuccessMsg("");
@@ -45,7 +45,7 @@ function CustomerLoginContent() {
       return;
     }
 
-    const success = loginCliente(phoneLogin);
+    const success = await loginCliente(phoneLogin);
     if (success) {
       setSuccessMsg("Acesso autorizado!");
       setTimeout(() => {
@@ -53,7 +53,7 @@ function CustomerLoginContent() {
       }, 800);
     } else {
       setErrorMsg(
-        "Nenhuma conta localizada para este telefone. Use a aba de cadastro ou utilize um dos telefones mockados de exemplo abaixo."
+        "Nenhuma conta localizada para este telefone. Use a aba de cadastro para criar sua conta."
       );
     }
   };
