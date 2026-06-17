@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import ClientOnly from "@/components/ClientOnly";
 import { trackInitiateCheckoutEvent } from "@/components/AnalyticsScripts";
@@ -20,7 +20,18 @@ export default function CheckoutPage() {
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [opcaoEntrega, setOpcaoEntrega] = useState<"retirada" | "entrega">("entrega");
-  const [endereco, setEndereco] = useState("");
+
+  // Endereço — campos separados
+  const [cep, setCep] = useState("");
+  const [rua, setRua] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState("");
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,8 +62,42 @@ export default function CheckoutPage() {
     }
     setNome(clienteLogado.nome);
     setTelefone(clienteLogado.telefone);
-    setEndereco(clienteLogado.endereco || "");
+    // Não pre-preenche endereço — usuário preenche os campos separados
   }, [clienteLogado, router]);
+
+  // Busca CEP via ViaCEP
+  const handleCepBlur = useCallback(async () => {
+    const cleaned = cep.replace(/\D/g, "");
+    if (cleaned.length !== 8) return;
+    setCepLoading(true);
+    setCepError("");
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setCepError("CEP não encontrado.");
+        return;
+      }
+      setRua(data.logradouro || "");
+      setBairro(data.bairro || "");
+      setCidade(data.localidade || "");
+      setEstado(data.uf || "");
+      // Focar no campo número após preencher
+      document.getElementById("numero")?.focus();
+    } catch {
+      setCepError("Erro ao buscar CEP. Verifique sua conexão.");
+    } finally {
+      setCepLoading(false);
+    }
+  }, [cep]);
+
+  // Formata CEP com máscara 00000-000
+  const handleCepChange = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    const formatted = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+    setCep(formatted);
+    setCepError("");
+  };
 
   // Redirect if cart is empty or wholesale rules not met
   useEffect(() => {
@@ -109,8 +154,13 @@ export default function CheckoutPage() {
     const newErrors: Record<string, string> = {};
     if (!nome.trim()) newErrors.nome = "Nome é obrigatório";
     if (!telefone.trim()) newErrors.telefone = "WhatsApp / Telefone é obrigatório";
-    if (opcaoEntrega === "entrega" && !endereco.trim()) {
-      newErrors.endereco = "Endereço é obrigatório para entrega";
+    if (opcaoEntrega === "entrega") {
+      if (!cep.trim()) newErrors.cep = "CEP é obrigatório";
+      if (!rua.trim()) newErrors.rua = "Rua é obrigatória";
+      if (!numero.trim()) newErrors.numero = "Número é obrigatório";
+      if (!bairro.trim()) newErrors.bairro = "Bairro é obrigatório";
+      if (!cidade.trim()) newErrors.cidade = "Cidade é obrigatória";
+      if (!estado.trim()) newErrors.estado = "Estado é obrigatório";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -122,15 +172,22 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
 
-    // Format delivery address if pickup selected
-    const finalEndereco = opcaoEntrega === "retirada" ? "Retirada na loja física Fysi" : endereco;
+    // Monta endereço completo a partir dos campos separados
+    const enderecoCompleto = opcaoEntrega === "retirada"
+      ? "Retirada na loja física Fysi"
+      : [
+          `${rua}, ${numero}${complemento ? ` - ${complemento}` : ""}`,
+          bairro,
+          `${cidade} - ${estado}`,
+          `CEP: ${cep}`,
+        ].join(", ");
 
     try {
       const newOrder = await addPedido(
         {
           nome,
           telefone,
-          endereco: finalEndereco
+          endereco: enderecoCompleto
         },
         appliedCoupon?.cupom,
         appliedCoupon?.descontoPercentual
@@ -247,23 +304,147 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Endereco */}
+            {/* Endereço de entrega — campos separados */}
             {opcaoEntrega === "entrega" && (
-              <div className="space-y-2 animate-fade-in">
-                <label htmlFor="endereco" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
-                  Endereço de Entrega *
-                </label>
-                <textarea
-                  id="endereco"
-                  rows={3}
-                  value={endereco}
-                  onChange={(e) => setEndereco(e.target.value)}
-                  placeholder="Rua, número, complemento, bairro, cidade e CEP"
-                  className={`w-full p-3 rounded-md border text-sm text-ink outline-none resize-none transition-colors ${
-                    errors.endereco ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
-                  }`}
-                />
-                {errors.endereco && <p className="text-xs text-clay font-medium">{errors.endereco}</p>}
+              <div className="space-y-4 animate-fade-in">
+                <div className="border-t border-ink/10 pt-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-coal/60 mb-4">
+                    Endereço de Entrega
+                  </p>
+
+                  {/* CEP */}
+                  <div className="space-y-1.5 mb-4">
+                    <label htmlFor="cep" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                      CEP *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        id="cep"
+                        value={cep}
+                        onChange={(e) => handleCepChange(e.target.value)}
+                        onBlur={handleCepBlur}
+                        placeholder="00000-000"
+                        maxLength={9}
+                        className={`w-full h-11 px-3 pr-10 rounded-md border text-sm text-ink outline-none transition-colors ${
+                          errors.cep ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                        }`}
+                      />
+                      {cepLoading && (
+                        <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-coal/40" />
+                      )}
+                    </div>
+                    {cepError && <p className="text-xs text-clay font-medium">{cepError}</p>}
+                    {errors.cep && <p className="text-xs text-clay font-medium">{errors.cep}</p>}
+                    <p className="text-[10px] text-coal/45">Digite o CEP para preencher o endereço automaticamente.</p>
+                  </div>
+
+                  {/* Rua + Número */}
+                  <div className="grid grid-cols-[1fr_120px] gap-3 mb-4">
+                    <div className="space-y-1.5">
+                      <label htmlFor="rua" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                        Rua / Logradouro *
+                      </label>
+                      <input
+                        type="text"
+                        id="rua"
+                        value={rua}
+                        onChange={(e) => setRua(e.target.value)}
+                        placeholder="Nome da rua"
+                        className={`w-full h-11 px-3 rounded-md border text-sm text-ink outline-none transition-colors ${
+                          errors.rua ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                        }`}
+                      />
+                      {errors.rua && <p className="text-xs text-clay font-medium">{errors.rua}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="numero" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                        Número *
+                      </label>
+                      <input
+                        type="text"
+                        id="numero"
+                        value={numero}
+                        onChange={(e) => setNumero(e.target.value)}
+                        placeholder="Ex: 123"
+                        className={`w-full h-11 px-3 rounded-md border text-sm text-ink outline-none transition-colors ${
+                          errors.numero ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                        }`}
+                      />
+                      {errors.numero && <p className="text-xs text-clay font-medium">{errors.numero}</p>}
+                    </div>
+                  </div>
+
+                  {/* Complemento */}
+                  <div className="space-y-1.5 mb-4">
+                    <label htmlFor="complemento" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                      Complemento <span className="normal-case font-normal text-coal/40">(opcional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="complemento"
+                      value={complemento}
+                      onChange={(e) => setComplemento(e.target.value)}
+                      placeholder="Apto, bloco, sala..."
+                      className="w-full h-11 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink transition-colors"
+                    />
+                  </div>
+
+                  {/* Bairro */}
+                  <div className="space-y-1.5 mb-4">
+                    <label htmlFor="bairro" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                      Bairro *
+                    </label>
+                    <input
+                      type="text"
+                      id="bairro"
+                      value={bairro}
+                      onChange={(e) => setBairro(e.target.value)}
+                      placeholder="Nome do bairro"
+                      className={`w-full h-11 px-3 rounded-md border text-sm text-ink outline-none transition-colors ${
+                        errors.bairro ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                      }`}
+                    />
+                    {errors.bairro && <p className="text-xs text-clay font-medium">{errors.bairro}</p>}
+                  </div>
+
+                  {/* Cidade + Estado */}
+                  <div className="grid grid-cols-[1fr_80px] gap-3">
+                    <div className="space-y-1.5">
+                      <label htmlFor="cidade" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                        Cidade *
+                      </label>
+                      <input
+                        type="text"
+                        id="cidade"
+                        value={cidade}
+                        onChange={(e) => setCidade(e.target.value)}
+                        placeholder="São Paulo"
+                        className={`w-full h-11 px-3 rounded-md border text-sm text-ink outline-none transition-colors ${
+                          errors.cidade ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                        }`}
+                      />
+                      {errors.cidade && <p className="text-xs text-clay font-medium">{errors.cidade}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="estado" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                        UF *
+                      </label>
+                      <input
+                        type="text"
+                        id="estado"
+                        value={estado}
+                        onChange={(e) => setEstado(e.target.value.toUpperCase().slice(0, 2))}
+                        placeholder="SP"
+                        maxLength={2}
+                        className={`w-full h-11 px-3 rounded-md border text-sm text-ink outline-none transition-colors uppercase ${
+                          errors.estado ? "border-clay bg-clay/5" : "border-ink/10 focus:border-ink"
+                        }`}
+                      />
+                      {errors.estado && <p className="text-xs text-clay font-medium">{errors.estado}</p>}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
