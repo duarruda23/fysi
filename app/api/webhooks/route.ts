@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { Webhook } from "@/lib/types";
+import type { Webhook, WebhookGatilho } from "@/lib/types";
 
 function mapRow(row: Record<string, unknown>): Webhook {
   return {
     id: row.id as string,
     nome: row.nome as string,
     url: row.url as string,
-    gatilhos: (row.gatilhos as string[]) ?? [],
+    gatilhos: ((row.gatilhos as string[]) ?? []) as WebhookGatilho[],
     ativo: row.ativo as boolean,
     criadoEm: row.criado_em as string,
   };
