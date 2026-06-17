@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Save, Check } from "lucide-react";
+import { WebhooksManager } from "@/components/WebhooksManager";
 
 export default function ConfigPage() {
   const { configuracoes, updateConfiguracoes } = useStore();
@@ -163,6 +164,19 @@ export default function ConfigPage() {
           </button>
         </div>
       </form>
+
+      {/* Webhooks */}
+      <div className="space-y-3 pt-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-gold">Integrações Externas</p>
+          <h2 className="font-serif text-2xl font-bold text-ink">Webhooks</h2>
+          <p className="text-coal/60 text-sm mt-1">
+            Cadastre endpoints externos para receber notificações HTTP automáticas a cada evento da loja.
+            Cada webhook pode ter um ou mais gatilhos independentes.
+          </p>
+        </div>
+        <WebhooksManager />
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { ItemPedido, Pedido } from "@/lib/types";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 function mapPedidoRow(
   row: Record<string, unknown>,
@@ -123,6 +124,15 @@ export async function POST(request: Request) {
   if (itensError) {
     return NextResponse.json({ error: itensError.message }, { status: 500 });
   }
+
+  // Disparar webhook de novo pedido (fire-and-forget)
+  dispatchWebhook("novo_pedido", {
+    pedidoId: id,
+    numero: nextNumero,
+    total,
+    cliente: body.cliente,
+    itens: body.itens,
+  });
 
   return NextResponse.json({ id, numero: nextNumero, total }, { status: 201 });
 }
