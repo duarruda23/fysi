@@ -7,6 +7,7 @@ import {
   Save, Check, Plus, Trash2, Eye, EyeOff, Image,
   ExternalLink, ChevronUp, ChevronDown, Pencil, X,
 } from "lucide-react";
+import { ImageUpload } from "@/components/ImageUpload";
 
 const EMPTY: Omit<Banner, "id" | "ordem" | "criadoEm"> = {
   titulo: "",
@@ -97,17 +98,14 @@ function BannerForm({
         </div>
 
         {/* Imagem */}
-        <div className="bg-white rounded-xl border border-ink/10 p-6 space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-coal/50">Imagem de Fundo</h3>
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-coal/60">URL da Imagem *</label>
-            <div className="relative">
-              <Image size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-coal/40" />
-              <input type="text" value={imagemUrl} onChange={(e) => setImagemUrl(e.target.value)} required
-                placeholder="/brand/foto.png ou https://..."
-                className="w-full rounded-md border border-ink/15 bg-pearl pl-9 pr-4 py-2.5 text-sm text-ink placeholder:text-coal/30 focus:outline-none focus:ring-2 focus:ring-gold/40" />
-            </div>
-          </div>
+        <div className="bg-white rounded-xl border border-ink/10 p-6">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-coal/50 mb-4">Imagem de Fundo</h3>
+          <ImageUpload
+            label="Foto do Banner *"
+            value={imagemUrl}
+            onChange={setImagemUrl}
+            hint="Recomendado: proporção 16:9, mínimo 1200px de largura."
+          />
         </div>
 
         {/* Visibilidade */}
