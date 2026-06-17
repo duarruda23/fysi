@@ -1,63 +1,63 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import type { Banner } from "@/lib/types";
 
-// GET /api/banners — retorna o banner principal
+function mapRow(row: Record<string, unknown>): Banner {
+  return {
+    id: row.id as string,
+    titulo: (row.titulo as string) ?? "",
+    subtitulo: (row.subtitulo as string) ?? "",
+    eyebrow: (row.eyebrow as string) ?? "",
+    botaoTexto: (row.botao_texto as string) ?? "",
+    botaoLink: (row.botao_link as string) ?? "/produtos",
+    imagemUrl: (row.imagem_url as string) ?? "",
+    ativo: (row.ativo as boolean) ?? true,
+    ordem: (row.ordem as number) ?? 0,
+    criadoEm: (row.criado_em as string) ?? new Date().toISOString(),
+  };
+}
+
+// GET — lista todos os banners ordenados
 export async function GET() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("banners")
     .select("*")
-    .eq("id", 1)
-    .single();
+    .order("ordem", { ascending: true })
+    .order("criado_em", { ascending: true });
 
-  if (error || !data) {
-    return NextResponse.json(
-      {
-        titulo: "Clean luxury para o seu dia a dia.",
-        subtitulo: "Descubra peças de linho, cetim e alfaiataria esculpidas para durar.",
-        eyebrow: "Coleção Essenciais 2026",
-        botaoTexto: "Explorar Catálogo",
-        botaoLink: "/produtos",
-        imagemUrl: "/brand/perfil-5.png",
-        ativo: true,
-      },
-      { status: 200 }
-    );
-  }
-
-  return NextResponse.json({
-    titulo: data.titulo,
-    subtitulo: data.subtitulo,
-    eyebrow: data.eyebrow,
-    botaoTexto: data.botao_texto,
-    botaoLink: data.botao_link,
-    imagemUrl: data.imagem_url,
-    ativo: data.ativo,
-  });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json((data ?? []).map(mapRow));
 }
 
-// PUT /api/banners — atualiza o banner principal
-export async function PUT(request: Request) {
+// POST — cria novo banner
+export async function POST(req: Request) {
   const supabase = await createClient();
-  const body = await request.json();
+  const body = await req.json();
 
-  const { error } = await supabase
+  const { data: last } = await supabase
     .from("banners")
-    .upsert({
-      id: 1,
-      titulo: body.titulo,
-      subtitulo: body.subtitulo,
-      eyebrow: body.eyebrow,
-      botao_texto: body.botaoTexto,
-      botao_link: body.botaoLink,
-      imagem_url: body.imagemUrl,
-      ativo: body.ativo,
-      atualizado_em: new Date().toISOString(),
-    });
+    .select("ordem")
+    .order("ordem", { ascending: false })
+    .limit(1)
+    .single();
+  const nextOrdem = last ? (last.ordem as number) + 1 : 0;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
+  const { data, error } = await supabase
+    .from("banners")
+    .insert({
+      titulo: body.titulo ?? "",
+      subtitulo: body.subtitulo ?? "",
+      eyebrow: body.eyebrow ?? "",
+      botao_texto: body.botaoTexto ?? "",
+      botao_link: body.botaoLink ?? "/produtos",
+      imagem_url: body.imagemUrl ?? "",
+      ativo: body.ativo ?? true,
+      ordem: nextOrdem,
+    })
+    .select()
+    .single();
 
-  return NextResponse.json({ ok: true });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(mapRow(data));
 }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
 
 const TAMANHOS: Tamanho[] = ["PP", "P", "M", "G", "GG", "XG"];
@@ -32,6 +33,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [preco, setPreco] = useState<number>(0);
   const [descricao, setDescricao] = useState("");
   const [fotosInput, setFotosInput] = useState("");
+  const [fotoUrl, setFotoUrl] = useState("");
   const [ativo, setAtivo] = useState(true);
 
   // Variations States
@@ -52,7 +54,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setReferencia(pecaToEdit.referencia);
       setDescricao(pecaToEdit.descricao);
       setPreco(pecaToEdit.preco);
-      setFotosInput(pecaToEdit.fotos.join(", "));
+      setFotosInput(pecaToEdit.fotos.slice(1).join(", "));
+      setFotoUrl(pecaToEdit.fotos[0] || "");
       setAtivo(pecaToEdit.ativo);
       setVariacoes(pecaToEdit.variacoes);
       
@@ -129,11 +132,13 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
     e.preventDefault();
     if (!validate()) return;
 
-    // Parse photos input
-    const fotos = fotosInput
+    // Monta array de fotos: foto principal (upload) + extras (URLs manuais)
+    const extraFotos = fotosInput
       .split(",")
       .map((url) => url.trim())
       .filter((url) => url !== "");
+
+    const fotos = fotoUrl ? [fotoUrl, ...extraFotos] : extraFotos;
 
     // Fallback photo
     if (fotos.length === 0) {
@@ -322,21 +327,29 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
             {errors.descricao && <p className="text-xs text-clay font-medium">{errors.descricao}</p>}
           </div>
 
-          {/* Fotos URLs */}
+          {/* Foto Principal — Upload */}
+          <ImageUpload
+            label="Foto Principal *"
+            value={fotoUrl}
+            onChange={setFotoUrl}
+            hint="Formatos aceitos: JPG, PNG ou WebP — máximo 5MB."
+          />
+
+          {/* Fotos adicionais (URLs extras, opcional) */}
           <div className="space-y-1.5">
             <label htmlFor="fotos" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
-              Foto URL (Mock de upload - separe múltiplas por vírgula)
+              Fotos Adicionais (opcional)
             </label>
             <input
               type="text"
               id="fotos"
               value={fotosInput}
               onChange={(e) => setFotosInput(e.target.value)}
-              placeholder="Ex: /brand/perfil-1.png, /brand/perfil-2.png"
+              placeholder="Cole URLs adicionais separadas por vírgula..."
               className="w-full h-10 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink"
             />
             <p className="text-[10px] text-coal/45">
-              Dica: você pode utilizar fotos já mockadas como `/brand/perfil-1.png` até `/brand/perfil-6.png`.
+              Para adicionar mais imagens, cole as URLs separadas por vírgula.
             </p>
           </div>
 
