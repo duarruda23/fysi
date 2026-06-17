@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ClipboardList, Store, LogOut, Tags, Percent, Star, Settings } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Store, LogOut, Tags, Percent, Star, Settings, Image } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 export default function AdminSidebar() {
@@ -13,6 +13,7 @@ export default function AdminSidebar() {
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Peças", href: "/admin/pecas", icon: Package },
     { name: "Pedidos", href: "/admin/pedidos", icon: ClipboardList },
+    { name: "Banners", href: "/admin/banners", icon: Image },
     { name: "Categorias", href: "/admin/categorias", icon: Tags },
     { name: "Promoções", href: "/admin/promocoes", icon: Percent },
     { name: "Lista VIP", href: "/admin/lista-vip", icon: Star },

@@ -9,6 +9,7 @@ import type {
   Promocao,
   InscricaoVIP,
   ConfiguracoesLoja,
+  Banner,
 } from "./types";
 
 interface Cliente {
@@ -80,6 +81,10 @@ interface StoreContextProps {
   // Configurações
   configuracoes: ConfiguracoesLoja;
   updateConfiguracoes: (updates: Partial<ConfiguracoesLoja>) => Promise<void>;
+
+  // Banner
+  banner: Banner;
+  updateBanner: (updates: Partial<Banner>) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextProps | undefined>(undefined);
@@ -90,6 +95,16 @@ const defaultConfigs: ConfiguracoesLoja = {
   googleAdsId: "",
   minimoPecasAtacado: 12,
   valorMinimoAtacado: 1000,
+};
+
+const defaultBanner: Banner = {
+  titulo: "Clean luxury para o seu dia a dia.",
+  subtitulo: "Descubra peças de linho, cetim e alfaiataria esculpidas para durar.",
+  eyebrow: "Coleção Essenciais 2026",
+  botaoTexto: "Explorar Catálogo",
+  botaoLink: "/produtos",
+  imagemUrl: "/brand/perfil-5.png",
+  ativo: true,
 };
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -119,13 +134,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [listaVip, setListaVip] = useState<InscricaoVIP[]>([]);
   const [configuracoes, setConfiguracoes] =
     useState<ConfiguracoesLoja>(defaultConfigs);
+  const [banner, setBanner] = useState<Banner>(defaultBanner);
   const [loading, setLoading] = useState(true);
 
   // Carregar dados do Supabase na montagem
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData] =
+      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData, bannerData] =
         await Promise.all([
           apiFetch<Peca[]>("/api/pecas"),
           apiFetch<Pedido[]>("/api/pedidos"),
@@ -133,6 +149,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           apiFetch<Promocao[]>("/api/promocoes"),
           apiFetch<InscricaoVIP[]>("/api/lista-vip"),
           apiFetch<ConfiguracoesLoja>("/api/configuracoes"),
+          apiFetch<Banner>("/api/banners"),
         ]);
 
       setPecas(pecasData);
@@ -141,6 +158,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setPromocoes(promocoesData);
       setListaVip(vipData);
       setConfiguracoes(configData);
+      setBanner(bannerData);
     } catch (err) {
       console.error("[Store] Erro ao carregar dados:", err);
     } finally {
@@ -503,6 +521,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setConfiguracoes((prev) => ({ ...prev, ...updates }));
   };
 
+  const updateBanner = async (updates: Partial<Banner>) => {
+    const next = { ...banner, ...updates };
+    await apiFetch("/api/banners", {
+      method: "PUT",
+      body: JSON.stringify(next),
+    });
+    setBanner(next);
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -540,6 +567,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deleteVip,
         configuracoes,
         updateConfiguracoes,
+        banner,
+        updateBanner,
       }}
     >
       {children}

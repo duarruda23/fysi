@@ -85,3 +85,13 @@ export interface ConfiguracoesLoja {
   minimoPecasAtacado: number;
   valorMinimoAtacado: number;
 }
+
+export interface Banner {
+  titulo: string;
+  subtitulo: string;
+  eyebrow: string;
+  botaoTexto: string;
+  botaoLink: string;
+  imagemUrl: string;
+  ativo: boolean;
+}
