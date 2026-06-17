@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { ItemPedido, Pedido } from "@/lib/types";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 function mapPedidoRow(
   row: Record<string, unknown>,
@@ -11,8 +12,10 @@ function mapPedidoRow(
     numero: row.numero as number,
     cliente: {
       nome: row.cliente_nome as string,
+      email: (row.cliente_email as string) ?? undefined,
       telefone: row.cliente_telefone as string,
       endereco: (row.cliente_endereco as string) ?? undefined,
+      clienteId: (row.cliente_id as string) ?? undefined,
     },
     itens,
     total: Number(row.total),
@@ -91,8 +94,10 @@ export async function POST(request: Request) {
     id,
     numero: nextNumero,
     cliente_nome: body.cliente.nome,
+    cliente_email: body.cliente.email ?? null,
     cliente_telefone: body.cliente.telefone,
     cliente_endereco: body.cliente.endereco ?? null,
+    cliente_id: body.cliente.clienteId ?? null,
     total,
     status: "pendente",
   });
@@ -119,6 +124,15 @@ export async function POST(request: Request) {
   if (itensError) {
     return NextResponse.json({ error: itensError.message }, { status: 500 });
   }
+
+  // Disparar webhook de novo pedido (fire-and-forget)
+  dispatchWebhook("novo_pedido", {
+    pedidoId: id,
+    numero: nextNumero,
+    total,
+    cliente: body.cliente,
+    itens: body.itens,
+  });
 
   return NextResponse.json({ id, numero: nextNumero, total }, { status: 201 });
 }

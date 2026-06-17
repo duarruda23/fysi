@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
+import type { WebhookGatilho } from "@/lib/types";
 
 export async function PATCH(
   request: Request,
@@ -47,6 +49,27 @@ export async function PATCH(
           .eq("id", item.variacaoId);
       }
     }
+  }
+
+  // Disparar webhook conforme novo status
+  const statusGatilhoMap: Record<string, WebhookGatilho> = {
+    aprovado:           "atualizacao_pedido",
+    recusado:           "atualizacao_pedido",
+    sendo_separado:     "pedido_sendo_separado",
+    saiu_para_entrega:  "saiu_para_entrega",
+    enviado:            "pedido_enviado",
+    entregue:           "pedido_entregue",
+    realizar_pagamento: "realizar_pagamento",
+    pagamento_efetuado: "pagamento_efetuado",
+  };
+
+  const gatilho = statusGatilhoMap[body.status];
+  if (gatilho) {
+    dispatchWebhook(gatilho, {
+      pedidoId: id,
+      novoStatus: body.status,
+      motivoRecusa: body.motivoRecusa ?? null,
+    });
   }
 
   return NextResponse.json({ ok: true });

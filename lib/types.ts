@@ -38,8 +38,10 @@ export interface Pedido {
   numero: number;
   cliente: {
     nome: string;
+    email?: string;
     telefone: string;
     endereco?: string;
+    clienteId?: string;
   };
   itens: ItemPedido[];
   total: number;
@@ -106,5 +108,25 @@ export interface Avaliacao {
   nota: number; // 1–5
   comentario: string;
   aprovado: boolean;
+  criadoEm: string;
+}
+
+export type WebhookGatilho =
+  | "novo_pedido"
+  | "atualizacao_pedido"
+  | "carrinho_abandonado"
+  | "saiu_para_entrega"
+  | "pedido_entregue"
+  | "realizar_pagamento"
+  | "pagamento_efetuado"
+  | "pedido_sendo_separado"
+  | "pedido_enviado";
+
+export interface Webhook {
+  id: string;
+  nome: string;
+  url: string;
+  gatilhos: WebhookGatilho[];
+  ativo: boolean;
   criadoEm: string;
 }

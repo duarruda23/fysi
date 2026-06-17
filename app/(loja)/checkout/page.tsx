@@ -187,7 +187,9 @@ export default function CheckoutPage() {
         {
           nome,
           telefone,
-          endereco: enderecoCompleto
+          email: clienteLogado?.email || "",
+          endereco: enderecoCompleto,
+          clienteId: clienteLogado?.id,
         },
         appliedCoupon?.cupom,
         appliedCoupon?.descontoPercentual

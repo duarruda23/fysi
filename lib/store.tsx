@@ -12,10 +12,20 @@ import type {
   Banner,
 } from "./types";
 
-interface Cliente {
+export interface Cliente {
+  id: string;
   nome: string;
+  email: string;
+  telefone: string;
+}
+
+// Dados do cliente usados na criação de pedidos (id não é necessário aqui)
+export interface ClientePedidoInput {
+  nome: string;
+  email?: string;
   telefone: string;
   endereco?: string;
+  clienteId?: string;
 }
 
 interface StoreContextProps {
@@ -26,9 +36,10 @@ interface StoreContextProps {
 
   // Cliente Session
   clienteLogado: Cliente | null;
-  loginCliente: (telefone: string) => Promise<boolean>;
-  cadastrarCliente: (cliente: Cliente) => void;
-  logoutCliente: () => void;
+  loginCliente: (email: string, senha: string) => Promise<{ ok: boolean; error?: string }>;
+  cadastrarCliente: (dados: { nome: string; email: string; telefone: string; senha: string }) => Promise<{ ok: boolean; error?: string }>;
+  logoutCliente: () => Promise<void>;
+  refetchCliente: () => Promise<void>;
 
   // Admin Session
   adminLogado: boolean;
@@ -43,7 +54,7 @@ interface StoreContextProps {
 
   // Pedidos Actions
   addPedido: (
-    cliente: Cliente,
+    cliente: ClientePedidoInput,
     cupom?: string,
     descontoPercentual?: number
   ) => Promise<Pedido | null>;
@@ -182,17 +193,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Restaurar sessão e carrinho do localStorage (apenas sessão/carrinho)
+  // ── Cliente Session ────────────────────────────────────────────────────────
+  // Definido antes dos useEffects para evitar ReferenceError
+
+  const refetchCliente = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setClienteLogado(data);
+      } else {
+        setClienteLogado(null);
+      }
+    } catch {
+      setClienteLogado(null);
+    }
+  }, []);
+
+  // Restaurar sessão do carrinho (localStorage) e cliente (cookie via API)
   useEffect(() => {
     try {
       const storedCarrinho = localStorage.getItem("fysi_carrinho");
-      const storedCliente = localStorage.getItem("fysi_cliente");
       const storedAdmin = localStorage.getItem("fysi_admin");
       if (storedCarrinho) setCarrinho(JSON.parse(storedCarrinho));
-      if (storedCliente) setClienteLogado(JSON.parse(storedCliente));
       if (storedAdmin === "true") setAdminLogado(true);
     } catch {}
-  }, []);
+    // Verificar sessão do cliente via cookie
+    refetchCliente();
+  }, [refetchCliente]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -201,43 +229,48 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("fysi_carrinho", JSON.stringify(carrinho));
   }, [carrinho]);
 
-  useEffect(() => {
-    if (clienteLogado) {
-      localStorage.setItem("fysi_cliente", JSON.stringify(clienteLogado));
-    } else {
-      localStorage.removeItem("fysi_cliente");
-    }
-  }, [clienteLogado]);
+  // Sessão do cliente é gerenciada via cookie HttpOnly — sem localStorage
 
   useEffect(() => {
     localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
   }, [adminLogado]);
 
-  // ── Cliente Session ────────────────────────────────────────────────────────
-
-  const loginCliente = async (telefone: string): Promise<boolean> => {
-    const cleanInput = telefone.replace(/\D/g, "");
-    if (!cleanInput) return false;
-
-    const matched = pedidos.find(
-      (p) => p.cliente.telefone.replace(/\D/g, "") === cleanInput
-    );
-    if (matched) {
-      setClienteLogado({
-        nome: matched.cliente.nome,
-        telefone: matched.cliente.telefone,
-        endereco: matched.cliente.endereco ?? "",
+  const loginCliente = async (email: string, senha: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha }),
       });
-      return true;
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error };
+      setClienteLogado(data);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Erro de conexão." };
     }
-    return false;
   };
 
-  const cadastrarCliente = (cliente: Cliente) => {
-    setClienteLogado(cliente);
+  const cadastrarCliente = async (dados: { nome: string; email: string; telefone: string; senha: string }): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error };
+      setClienteLogado(data);
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Erro de conexão." };
+    }
   };
 
-  const logoutCliente = () => setClienteLogado(null);
+  const logoutCliente = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setClienteLogado(null);
+  };
 
   // ── Admin Session ──────────────────────────────────────────────────────────
 
@@ -279,7 +312,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // ── Pedidos ────────────────────────────────────────────────────────────────
 
   const addPedido = async (
-    cliente: Cliente,
+    cliente: ClientePedidoInput,
     _cupom?: string,
     descontoPercentual?: number
   ): Promise<Pedido | null> => {
@@ -566,11 +599,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         pedidos,
         carrinho,
         clienteLogado,
-        adminLogado,
-        loading,
         loginCliente,
         cadastrarCliente,
         logoutCliente,
+        refetchCliente,
         loginAdmin,
         logoutAdmin,
         addPeca,
