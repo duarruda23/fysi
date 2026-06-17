@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ShoppingBag, Check, AlertTriangle, Minus, Plus, Star } from "lucide-react";
 import { useStore } from "@/lib/store";
-import type { Tamanho, VariacaoPeca } from "@/lib/types";
+import type { Tamanho, VariacaoPeca, Avaliacao } from "@/lib/types";
 import { trackAddToCartEvent } from "@/components/AnalyticsScripts";
+import { Avaliacoes } from "@/components/Avaliacoes";
 
 function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -38,6 +39,25 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [vipName, setVipName] = useState("");
   const [vipPhone, setVipPhone] = useState("");
   const [vipSuccess, setVipSuccess] = useState(false);
+
+  // Avaliações — busca do banco para exibir estrelas no painel lateral
+  const [avaliacoesSummary, setAvaliacoesSummary] = useState<{ media: number; total: number }>({ media: 0, total: 0 });
+
+  const fetchAvaliacoesSummary = useCallback(async () => {
+    if (!peca) return;
+    try {
+      const res = await fetch(`/api/avaliacoes?peca_id=${peca.id}`);
+      const data: Avaliacao[] = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const media = data.reduce((sum, a) => sum + a.nota, 0) / data.length;
+        setAvaliacoesSummary({ media, total: data.length });
+      }
+    } catch { /* silencioso */ }
+  }, [peca]);
+
+  useEffect(() => {
+    fetchAvaliacoesSummary();
+  }, [fetchAvaliacoesSummary]);
 
   // Auto-prefill VIP name and phone if clienteLogado changes
   useEffect(() => {
@@ -378,14 +398,27 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               <p className="text-3xl font-bold text-ink">{currency(peca.preco)}</p>
             )}
             <div className="flex items-center gap-2">
-              <div className="flex items-center text-gold">
-                <Star size={14} className="fill-gold" />
-                <Star size={14} className="fill-gold" />
-                <Star size={14} className="fill-gold" />
-                <Star size={14} className="fill-gold" />
-                <Star size={14} className="text-coal/20" />
-              </div>
-              <span className="text-[11px] font-semibold text-coal/50">(4.0 estrelas) • 12 avaliações</span>
+              {avaliacoesSummary.total > 0 ? (
+                <>
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        size={14}
+                        className={s <= Math.round(avaliacoesSummary.media) ? "fill-gold text-gold" : "text-coal/20"}
+                      />
+                    ))}
+                  </div>
+                  <a
+                    href="#avaliacoes"
+                    className="text-[11px] font-semibold text-coal/50 hover:text-ink transition-colors"
+                  >
+                    ({avaliacoesSummary.media.toFixed(1)} estrelas) • {avaliacoesSummary.total} {avaliacoesSummary.total === 1 ? "avaliação" : "avaliações"}
+                  </a>
+                </>
+              ) : (
+                <span className="text-[11px] text-coal/40">Sem avaliações ainda</span>
+              )}
             </div>
           </div>
 
@@ -642,6 +675,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           )}
         </div>
+      </div>
+
+      {/* Seção de Avaliações */}
+      <div id="avaliacoes" className="border-t border-ink/10 pt-10">
+        <Avaliacoes pecaId={peca.id} />
       </div>
     </div>
   );

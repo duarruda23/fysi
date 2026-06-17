@@ -98,3 +98,13 @@ export interface Banner {
   ordem: number;
   criadoEm: string;
 }
+
+export interface Avaliacao {
+  id: string;
+  pecaId: string;
+  autorNome: string;
+  nota: number; // 1–5
+  comentario: string;
+  aprovado: boolean;
+  criadoEm: string;
+}
