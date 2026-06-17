@@ -38,8 +38,10 @@ export interface Pedido {
   numero: number;
   cliente: {
     nome: string;
+    email?: string;
     telefone: string;
     endereco?: string;
+    clienteId?: string;
   };
   itens: ItemPedido[];
   total: number;

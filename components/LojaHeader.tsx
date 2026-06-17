@@ -37,14 +37,14 @@ export default function LojaHeader() {
             Catálogo
           </Link>
           <Link
-            href="/meus-pedidos"
+            href="/minha-conta"
             className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === "/meus-pedidos"
+              pathname === "/minha-conta"
                 ? "bg-white text-ink shadow-line"
                 : "text-coal/70 hover:bg-white/60 hover:text-ink"
             }`}
           >
-            Meus Pedidos
+            Minha Conta
           </Link>
         </nav>
 
@@ -53,11 +53,14 @@ export default function LojaHeader() {
           {/* Cliente greeting / Login */}
           <ClientOnly>
             {clienteLogado ? (
-              <div className="hidden sm:flex items-center gap-3 bg-white/50 border border-ink/8 rounded-md px-3 py-1.5 text-xs text-ink">
-                <span className="font-semibold">Olá, {clienteLogado.nome.split(" ")[0]}</span>
+              <div className="hidden sm:flex items-center gap-2">
+                <Link href="/minha-conta" className="flex items-center gap-2 bg-white/50 border border-ink/8 rounded-md px-3 py-1.5 text-xs text-ink hover:bg-white transition-colors">
+                  <User size={13} />
+                  <span className="font-semibold">{clienteLogado.nome.split(" ")[0]}</span>
+                </Link>
                 <button
                   onClick={logoutCliente}
-                  className="p-1 hover:bg-clay/5 hover:text-clay rounded"
+                  className="h-8 w-8 flex items-center justify-center rounded-md border border-ink/10 bg-white hover:text-clay transition-colors"
                   title="Sair da Conta"
                 >
                   <LogOut size={13} />
@@ -105,12 +108,12 @@ export default function LojaHeader() {
           </Link>
           <span className="text-ink/10">|</span>
           <Link
-            href="/meus-pedidos"
+            href="/minha-conta"
             className={`font-semibold uppercase tracking-wider ${
-              pathname === "/meus-pedidos" ? "text-gold" : "text-coal/65"
+              pathname === "/minha-conta" ? "text-gold" : "text-coal/65"
             }`}
           >
-            Meus Pedidos
+            Minha Conta
           </Link>
         </div>
         

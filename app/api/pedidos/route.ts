@@ -11,8 +11,10 @@ function mapPedidoRow(
     numero: row.numero as number,
     cliente: {
       nome: row.cliente_nome as string,
+      email: (row.cliente_email as string) ?? undefined,
       telefone: row.cliente_telefone as string,
       endereco: (row.cliente_endereco as string) ?? undefined,
+      clienteId: (row.cliente_id as string) ?? undefined,
     },
     itens,
     total: Number(row.total),
@@ -91,8 +93,10 @@ export async function POST(request: Request) {
     id,
     numero: nextNumero,
     cliente_nome: body.cliente.nome,
+    cliente_email: body.cliente.email ?? null,
     cliente_telefone: body.cliente.telefone,
     cliente_endereco: body.cliente.endereco ?? null,
+    cliente_id: body.cliente.clienteId ?? null,
     total,
     status: "pendente",
   });
