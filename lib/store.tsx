@@ -193,6 +193,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // ── Cliente Session ────────────────────────────────────────────────────────
+  // Definido antes dos useEffects para evitar ReferenceError
+
+  const refetchCliente = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      if (res.ok) {
+        const data = await res.json();
+        setClienteLogado(data);
+      } else {
+        setClienteLogado(null);
+      }
+    } catch {
+      setClienteLogado(null);
+    }
+  }, []);
+
   // Restaurar sessão do carrinho (localStorage) e cliente (cookie via API)
   useEffect(() => {
     try {
@@ -217,22 +234,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
   }, [adminLogado]);
-
-  // ── Cliente Session ────────────────────────────────────────────��───────────
-
-  const refetchCliente = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      if (res.ok) {
-        const data = await res.json();
-        setClienteLogado(data);
-      } else {
-        setClienteLogado(null);
-      }
-    } catch {
-      setClienteLogado(null);
-    }
-  }, []);
 
   const loginCliente = async (email: string, senha: string): Promise<{ ok: boolean; error?: string }> => {
     try {
