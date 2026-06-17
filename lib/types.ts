@@ -87,6 +87,7 @@ export interface ConfiguracoesLoja {
 }
 
 export interface Banner {
+  id: string;
   titulo: string;
   subtitulo: string;
   eyebrow: string;
@@ -94,4 +95,6 @@ export interface Banner {
   botaoLink: string;
   imagemUrl: string;
   ativo: boolean;
+  ordem: number;
+  criadoEm: string;
 }

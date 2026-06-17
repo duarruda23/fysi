@@ -82,9 +82,12 @@ interface StoreContextProps {
   configuracoes: ConfiguracoesLoja;
   updateConfiguracoes: (updates: Partial<ConfiguracoesLoja>) => Promise<void>;
 
-  // Banner
-  banner: Banner;
-  updateBanner: (updates: Partial<Banner>) => Promise<void>;
+  // Banner (carrossel)
+  banners: Banner[];
+  addBanner: (data: Omit<Banner, "id" | "ordem" | "criadoEm">) => Promise<void>;
+  updateBanner: (id: string, updates: Partial<Banner>) => Promise<void>;
+  deleteBanner: (id: string) => Promise<void>;
+  refetchBanners: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextProps | undefined>(undefined);
@@ -98,6 +101,7 @@ const defaultConfigs: ConfiguracoesLoja = {
 };
 
 const defaultBanner: Banner = {
+  id: "",
   titulo: "Clean luxury para o seu dia a dia.",
   subtitulo: "Descubra peças de linho, cetim e alfaiataria esculpidas para durar.",
   eyebrow: "Coleção Essenciais 2026",
@@ -105,6 +109,8 @@ const defaultBanner: Banner = {
   botaoLink: "/produtos",
   imagemUrl: "/brand/perfil-5.png",
   ativo: true,
+  ordem: 0,
+  criadoEm: "",
 };
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -134,14 +140,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [listaVip, setListaVip] = useState<InscricaoVIP[]>([]);
   const [configuracoes, setConfiguracoes] =
     useState<ConfiguracoesLoja>(defaultConfigs);
-  const [banner, setBanner] = useState<Banner>(defaultBanner);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Carregar dados do Supabase na montagem
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData, bannerData] =
+      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData, bannersData] =
         await Promise.all([
           apiFetch<Peca[]>("/api/pecas"),
           apiFetch<Pedido[]>("/api/pedidos"),
@@ -149,7 +155,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           apiFetch<Promocao[]>("/api/promocoes"),
           apiFetch<InscricaoVIP[]>("/api/lista-vip"),
           apiFetch<ConfiguracoesLoja>("/api/configuracoes"),
-          apiFetch<Banner>("/api/banners"),
+          apiFetch<Banner[]>("/api/banners"),
         ]);
 
       setPecas(pecasData);
@@ -158,7 +164,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setPromocoes(promocoesData);
       setListaVip(vipData);
       setConfiguracoes(configData);
-      setBanner(bannerData);
+      setBanners(Array.isArray(bannersData) ? bannersData : []);
     } catch (err) {
       console.error("[Store] Erro ao carregar dados:", err);
     } finally {
@@ -475,7 +481,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setPromocoes((prev) => prev.filter((p) => p.id !== id));
   };
 
-  // ── Lista VIP ──────────────────────────────────────────────────────────────
+  // ── Lista VIP ────────────────────────────────────��─────────────────────────
 
   const inscreverVip = async (
     inscricaoData: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
@@ -521,13 +527,36 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setConfiguracoes((prev) => ({ ...prev, ...updates }));
   };
 
-  const updateBanner = async (updates: Partial<Banner>) => {
-    const next = { ...banner, ...updates };
-    await apiFetch("/api/banners", {
-      method: "PUT",
-      body: JSON.stringify(next),
+  const refetchBanners = useCallback(async () => {
+    try {
+      const data = await apiFetch<Banner[]>("/api/banners");
+      setBanners(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("[Store] Erro ao rebuscar banners:", err);
+    }
+  }, []);
+
+  const addBanner = async (bannerData: Omit<Banner, "id" | "ordem" | "criadoEm">) => {
+    await apiFetch<Banner>("/api/banners", {
+      method: "POST",
+      body: JSON.stringify(bannerData),
     });
-    setBanner(next);
+    await refetchBanners();
+  };
+
+  const updateBanner = async (id: string, updates: Partial<Banner>) => {
+    await apiFetch(`/api/banners/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(updates),
+    });
+    setBanners((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...updates } : b))
+    );
+  };
+
+  const deleteBanner = async (id: string) => {
+    await apiFetch(`/api/banners/${id}`, { method: "DELETE" });
+    setBanners((prev) => prev.filter((b) => b.id !== id));
   };
 
   return (
@@ -567,8 +596,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         deleteVip,
         configuracoes,
         updateConfiguracoes,
-        banner,
+        banners,
+        addBanner,
         updateBanner,
+        deleteBanner,
+        refetchBanners,
       }}
     >
       {children}

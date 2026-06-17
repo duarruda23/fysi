@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, Eye, ShoppingBag } from "lucide-react";
+import { ArrowRight, Sparkles, Eye, ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { Peca } from "@/lib/types";
 
 function currency(value: number) {
@@ -11,53 +11,127 @@ function currency(value: number) {
 }
 
 export default function LojaHomePage() {
-  const { pecas, banner } = useStore();
+  const { pecas, banners } = useStore();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Get active pieces with some stock
+  const activeBanners = useMemo(
+    () => banners.filter((b) => b.ativo).sort((a, b) => a.ordem - b.ordem),
+    [banners]
+  );
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((i) => (i === 0 ? activeBanners.length - 1 : i - 1));
+  }, [activeBanners.length]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((i) => (i === activeBanners.length - 1 ? 0 : i + 1));
+  }, [activeBanners.length]);
+
+  // Auto-play a cada 5 segundos se houver mais de 1 banner
+  useEffect(() => {
+    if (activeBanners.length <= 1) return;
+    const timer = setInterval(nextSlide, 5000);
+    return () => clearInterval(timer);
+  }, [activeBanners.length, nextSlide]);
+
+  // Resetar slide quando a lista mudar
+  useEffect(() => {
+    setCurrentSlide(0);
+  }, [activeBanners.length]);
+
   const featuredPecas = useMemo(() => {
     return pecas
       .filter((p) => p.ativo && p.variacoes.some((v) => v.quantidadeEstoque > 0))
       .slice(0, 4);
   }, [pecas]);
 
-  // Unique categories from active pieces
   const activeCategories = useMemo(() => {
     const cats = new Set(pecas.filter((p) => p.ativo).map((p) => p.categoria));
     return Array.from(cats);
   }, [pecas]);
 
+  const banner = activeBanners[currentSlide];
+
   return (
     <div className="space-y-16">
-      {/* Hero Editorial Banner — dados do banco */}
-      {banner.ativo && (
-        <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft min-h-[480px] flex items-end">
-          <img
-            src={banner.imagemUrl}
-            alt="Banner principal Fysi"
-            className="absolute inset-0 h-full w-full object-cover opacity-60 md:opacity-75 transition-transform duration-700 hover:scale-105"
-          />
+      {/* Hero Carrossel */}
+      {activeBanners.length > 0 && banner && (
+        <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft min-h-[480px] flex items-end group">
+          {/* Imagens de todos os slides (pré-carregadas, apenas o ativo fica visível) */}
+          {activeBanners.map((b, i) => (
+            <img
+              key={b.id}
+              src={b.imagemUrl}
+              alt={b.titulo}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+                i === currentSlide ? "opacity-60 md:opacity-75" : "opacity-0"
+              }`}
+            />
+          ))}
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
-          <div className="relative p-6 md:p-12 max-w-2xl space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-medium backdrop-blur">
-              <Sparkles size={13} className="text-gold" />
-              {banner.eyebrow}
-            </div>
+
+          {/* Conteúdo do slide atual */}
+          <div className="relative p-6 md:p-12 max-w-2xl space-y-6 w-full">
+            {banner.eyebrow && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-medium backdrop-blur">
+                <Sparkles size={13} className="text-gold" />
+                {banner.eyebrow}
+              </div>
+            )}
             <h1 className="font-serif text-4xl font-semibold leading-tight md:text-6xl">
               {banner.titulo}
             </h1>
-            <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-lg">
-              {banner.subtitulo}
-            </p>
-            <div className="pt-2">
-              <Link
-                href={banner.botaoLink}
-                className="inline-flex h-12 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-md active:scale-95"
-              >
-                {banner.botaoTexto}
-                <ArrowRight size={16} />
-              </Link>
-            </div>
+            {banner.subtitulo && (
+              <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-lg">
+                {banner.subtitulo}
+              </p>
+            )}
+            {banner.botaoTexto && (
+              <div className="pt-2">
+                <Link
+                  href={banner.botaoLink || "/produtos"}
+                  className="inline-flex h-12 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-md active:scale-95"
+                >
+                  {banner.botaoTexto}
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
+            )}
           </div>
+
+          {/* Controles de navegação — só aparecem com 2+ banners */}
+          {activeBanners.length > 1 && (
+            <>
+              <button
+                onClick={prevSlide}
+                aria-label="Banner anterior"
+                className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <button
+                onClick={nextSlide}
+                aria-label="Próximo banner"
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
+              >
+                <ChevronRight size={20} />
+              </button>
+
+              {/* Indicadores (bolinhas) */}
+              <div className="absolute bottom-5 right-6 flex gap-1.5">
+                {activeBanners.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentSlide(i)}
+                    aria-label={`Ir para banner ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      i === currentSlide ? "bg-gold w-6" : "bg-white/40 w-1.5 hover:bg-white/70"
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </section>
       )}
 
