@@ -218,10 +218,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   // Handle VIP registration
   const handleVipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!peca || !activeColor || !vipSelectedSize) return;
+    if (!peca || !vipSelectedSize) return;
 
-    const targetVar = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === vipSelectedSize);
-    if (!targetVar) return;
+    // Tenta encontrar a variação exata; se não encontrar, usa fallback com cor/tamanho direto
+    const targetVar = activeColor
+      ? peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === vipSelectedSize)
+      : peca.variacoes.find((v) => v.tamanho === vipSelectedSize);
+
+    const corFinal = activeColor || (targetVar?.cor ?? peca.variacoes[0]?.cor ?? "");
+    const variacaoIdFinal = targetVar?.id ?? `${peca.id}-${corFinal}-${vipSelectedSize}`;
 
     setVipLoading(true);
     setVipError("");
@@ -231,9 +236,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       clienteTelefone: vipPhone.trim(),
       pecaId: peca.id,
       pecaNome: peca.nome,
-      variacaoId: targetVar.id,
-      cor: activeColor,
-      tamanho: vipSelectedSize
+      variacaoId: variacaoIdFinal,
+      cor: corFinal,
+      tamanho: vipSelectedSize,
     });
 
     setVipLoading(false);
