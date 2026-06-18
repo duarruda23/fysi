@@ -39,6 +39,8 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [vipName, setVipName] = useState("");
   const [vipPhone, setVipPhone] = useState("");
   const [vipSuccess, setVipSuccess] = useState(false);
+  const [vipError, setVipError] = useState("");
+  const [vipLoading, setVipLoading] = useState(false);
 
   // Avaliações — busca do banco para exibir estrelas no painel lateral
   const [avaliacoesSummary, setAvaliacoesSummary] = useState<{ media: number; total: number }>({ media: 0, total: 0 });
@@ -214,14 +216,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   };
 
   // Handle VIP registration
-  const handleVipSubmit = (e: React.FormEvent) => {
+  const handleVipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!peca || !activeColor || !vipSelectedSize) return;
 
     const targetVar = peca.variacoes.find((v) => v.cor === activeColor && v.tamanho === vipSelectedSize);
     if (!targetVar) return;
 
-    inscreverVip({
+    setVipLoading(true);
+    setVipError("");
+
+    const result = await inscreverVip({
       clienteNome: vipName.trim(),
       clienteTelefone: vipPhone.trim(),
       pecaId: peca.id,
@@ -231,7 +236,16 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       tamanho: vipSelectedSize
     });
 
+    setVipLoading(false);
+
+    if (!result.ok) {
+      setVipError(result.error ?? "Erro ao realizar inscrição. Tente novamente.");
+      return;
+    }
+
     setVipSuccess(true);
+    setVipName("");
+    setVipPhone("");
     setTimeout(() => {
       setVipSuccess(false);
       setVipSelectedSize(null);
@@ -643,11 +657,17 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                       className="w-full h-9 bg-white border border-ink/10 rounded px-2.5 text-xs text-ink outline-none focus:border-ink"
                     />
                   </div>
+                  {vipError && (
+                    <p className="text-xs text-clay font-semibold bg-clay/5 border border-clay/20 rounded px-2.5 py-2">
+                      {vipError}
+                    </p>
+                  )}
                   <button
                     type="submit"
-                    className="w-full h-9 bg-ink hover:bg-coal text-white text-xs font-bold rounded transition-all active:scale-97 shadow-sm"
+                    disabled={vipLoading}
+                    className="w-full h-9 bg-ink hover:bg-coal disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold rounded transition-all active:scale-97 shadow-sm"
                   >
-                    Entrar na Lista VIP
+                    {vipLoading ? "Inscrevendo..." : "Entrar na Lista VIP"}
                   </button>
                 </form>
               )}

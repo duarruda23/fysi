@@ -84,8 +84,8 @@ interface StoreContextProps {
   // Lista VIP
   listaVip: InscricaoVIP[];
   inscreverVip: (
-    inscricao: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
-  ) => Promise<void>;
+    inscricaoData: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
+  ) => Promise<{ ok: boolean; error?: string }>;
   toggleNotificadoVip: (id: string) => Promise<void>;
   deleteVip: (id: string) => Promise<void>;
 
@@ -518,18 +518,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const inscreverVip = async (
     inscricaoData: Omit<InscricaoVIP, "id" | "criadoEm" | "notificado">
-  ) => {
-    const { id } = await apiFetch<{ id: string }>("/api/lista-vip", {
-      method: "POST",
-      body: JSON.stringify(inscricaoData),
-    });
-    const nova: InscricaoVIP = {
-      ...inscricaoData,
-      id,
-      criadoEm: new Date().toISOString(),
-      notificado: false,
-    };
-    setListaVip((prev) => [nova, ...prev]);
+  ): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const { id } = await apiFetch<{ id: string }>("/api/lista-vip", {
+        method: "POST",
+        body: JSON.stringify(inscricaoData),
+      });
+      const nova: InscricaoVIP = {
+        ...inscricaoData,
+        id,
+        criadoEm: new Date().toISOString(),
+        notificado: false,
+      };
+      setListaVip((prev) => [nova, ...prev]);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Erro ao inscrever na lista VIP." };
+    }
   };
 
   const toggleNotificadoVip = async (id: string) => {
