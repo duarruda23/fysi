@@ -1,54 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { createClient } from "@supabase/supabase-js";
-import { signToken, setClienteCookie } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export async function POST(request: Request) {
+  const { email, senha } = await request.json();
 
-export async function POST(req: NextRequest) {
-  try {
-    const { email, senha } = await req.json();
-
-    if (!email?.trim() || !senha?.trim()) {
-      return NextResponse.json({ error: "E-mail e senha são obrigatórios." }, { status: 400 });
-    }
-
-    const { data: cliente, error } = await supabase
-      .from("clientes")
-      .select("id, nome, email, telefone, senha_hash")
-      .eq("email", email.toLowerCase().trim())
-      .maybeSingle();
-
-    if (error || !cliente) {
-      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
-    }
-
-    const senhaOk = await bcrypt.compare(senha, cliente.senha_hash);
-    if (!senhaOk) {
-      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
-    }
-
-    const token = await signToken({
-      id: cliente.id,
-      nome: cliente.nome,
-      email: cliente.email,
-      telefone: cliente.telefone,
-    });
-
-    const res = NextResponse.json({
-      id: cliente.id,
-      nome: cliente.nome,
-      email: cliente.email,
-      telefone: cliente.telefone,
-    });
-
-    res.cookies.set(setClienteCookie(token));
-    return res;
-  } catch (err) {
-    console.error("[auth/login]", err);
-    return NextResponse.json({ error: "Erro interno." }, { status: 500 });
+  if (!email || !senha) {
+    return NextResponse.json({ error: "E-mail e senha são obrigatórios." }, { status: 400 });
   }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.toLowerCase().trim(),
+    password: senha,
+  });
+
+  if (error || !data.user) {
+    return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+  }
+
+  // Bloquear acesso de admin por esta rota
+  if (data.user.user_metadata?.is_admin) {
+    await supabase.auth.signOut();
+    return NextResponse.json({ error: "Use o portal de administração." }, { status: 403 });
+  }
+
+  // Buscar dados completos do cliente na tabela clientes
+  const { data: cliente } = await supabase
+    .from("clientes")
+    .select("id, nome, email, telefone")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  return NextResponse.json(
+    cliente ?? {
+      id: data.user.id,
+      nome: data.user.user_metadata?.nome ?? data.user.email?.split("@")[0] ?? "",
+      email: data.user.email,
+      telefone: data.user.user_metadata?.telefone ?? "",
+    }
+  );
 }
