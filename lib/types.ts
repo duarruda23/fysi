@@ -19,6 +19,11 @@ export interface Peca {
   variacoes: VariacaoPeca[];
   ativo: boolean;
   criadoEm: string;
+  // Conteúdo editável da página do produto
+  bullets?: string[];
+  detalheTexto?: string;
+  envioTexto?: string;
+  devolucoesTexto?: string;
 }
 
 export type StatusPedido = "pendente" | "aprovado" | "recusado";

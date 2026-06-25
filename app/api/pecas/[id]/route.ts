@@ -19,6 +19,10 @@ export async function PUT(
   if (pecaData.preco !== undefined) updatePayload.preco = pecaData.preco;
   if (pecaData.fotos !== undefined) updatePayload.fotos = pecaData.fotos;
   if (pecaData.ativo !== undefined) updatePayload.ativo = pecaData.ativo;
+  if (pecaData.bullets !== undefined) updatePayload.bullets = pecaData.bullets;
+  if (pecaData.detalheTexto !== undefined) updatePayload.detalhe_texto = pecaData.detalheTexto;
+  if (pecaData.envioTexto !== undefined) updatePayload.envio_texto = pecaData.envioTexto;
+  if (pecaData.devolucoesTexto !== undefined) updatePayload.devolucoes_texto = pecaData.devolucoesTexto;
 
   if (Object.keys(updatePayload).length > 0) {
     const { error } = await supabase
