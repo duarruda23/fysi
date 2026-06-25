@@ -36,8 +36,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [detalheTexto, setDetalheTexto] = useState("");
   const [envioTexto, setEnvioTexto] = useState("");
   const [devolucoesTexto, setDevolucoesTexto] = useState("");
-  const [fotosInput, setFotosInput] = useState("");
-  const [fotoUrl, setFotoUrl] = useState("");
+  const [fotos, setFotos] = useState<string[]>([""]);
   const [ativo, setAtivo] = useState(true);
 
   // Variations States
@@ -58,8 +57,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setReferencia(pecaToEdit.referencia);
       setDescricao(pecaToEdit.descricao);
       setPreco(pecaToEdit.preco);
-      setFotosInput(pecaToEdit.fotos.slice(1).join(", "));
-      setFotoUrl(pecaToEdit.fotos[0] || "");
+      setFotos(pecaToEdit.fotos.length > 0 ? pecaToEdit.fotos : [""]);
       setAtivo(pecaToEdit.ativo);
       setVariacoes(pecaToEdit.variacoes);
       setBullets(pecaToEdit.bullets?.length ? pecaToEdit.bullets : [""]);
@@ -140,18 +138,9 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
     e.preventDefault();
     if (!validate()) return;
 
-    // Monta array de fotos: foto principal (upload) + extras (URLs manuais)
-    const extraFotos = fotosInput
-      .split(",")
-      .map((url) => url.trim())
-      .filter((url) => url !== "");
-
-    const fotos = fotoUrl ? [fotoUrl, ...extraFotos] : extraFotos;
-
-    // Fallback photo
-    if (fotos.length === 0) {
-      fotos.push("/brand/logo-preto.png");
-    }
+    // Filtra slots vazios e aplica fallback
+    const fotosFinais = fotos.filter((url) => url.trim() !== "");
+    if (fotosFinais.length === 0) fotosFinais.push("/brand/logo-preto.png");
 
     const finalCat = useCustomCategory ? novaCategoria : categoria;
 
@@ -161,7 +150,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       categoria: finalCat,
       preco,
       descricao,
-      fotos,
+      fotos: fotosFinais,
       ativo,
       variacoes,
       bullets: bullets.map(b => b.trim()).filter(b => b !== ""),
@@ -411,30 +400,50 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
             </div>
           </div>
 
-          {/* Foto Principal — Upload */}
-          <ImageUpload
-            label="Foto Principal *"
-            value={fotoUrl}
-            onChange={setFotoUrl}
-            hint="Formatos aceitos: JPG, PNG ou WebP — máximo 5MB."
-          />
+          {/* Galeria de fotos — múltiplos uploads */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Fotos da Peça *
+              </label>
+              <span className="text-[10px] text-coal/40">{fotos.filter(f => f).length} foto(s)</span>
+            </div>
 
-          {/* Fotos adicionais (URLs extras, opcional) */}
-          <div className="space-y-1.5">
-            <label htmlFor="fotos" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
-              Fotos Adicionais (opcional)
-            </label>
-            <input
-              type="text"
-              id="fotos"
-              value={fotosInput}
-              onChange={(e) => setFotosInput(e.target.value)}
-              placeholder="Cole URLs adicionais separadas por vírgula..."
-              className="w-full h-10 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink"
-            />
-            <p className="text-[10px] text-coal/45">
-              Para adicionar mais imagens, cole as URLs separadas por vírgula.
-            </p>
+            <div className="space-y-4">
+              {fotos.map((url, i) => (
+                <div key={i} className="relative">
+                  {/* Label da foto */}
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-coal/50">
+                      {i === 0 ? "Foto Principal" : `Foto ${i + 1}`}
+                    </span>
+                    {fotos.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setFotos(prev => prev.filter((_, idx) => idx !== i))}
+                        className="inline-flex items-center gap-1 text-[11px] text-clay/70 hover:text-clay font-semibold transition-colors"
+                      >
+                        <X size={12} /> Remover
+                      </button>
+                    )}
+                  </div>
+                  <ImageUpload
+                    value={url}
+                    onChange={(newUrl) =>
+                      setFotos(prev => prev.map((v, idx) => idx === i ? newUrl : v))
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFotos(prev => [...prev, ""])}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold hover:text-gold/80 transition-colors"
+            >
+              <Plus size={13} /> Adicionar outra foto
+            </button>
           </div>
 
           {/* Ativo Status Toggle */}
