@@ -53,11 +53,14 @@ export default function LojaHomePage() {
   const banner = activeBanners[currentSlide];
 
   return (
-    <div className="space-y-16">
-      {/* Hero Carrossel Editorial */}
+    <div className="space-y-16 pt-0">
+      {/* Hero Carrossel Editorial — full-width, escapa do padding do container */}
       {activeBanners.length > 0 && banner && (
-        <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft group" style={{ minHeight: "clamp(420px, 60vw, 620px)" }}>
-          {/* Imagens de fundo — transição suave entre slides */}
+        <section
+          className="relative overflow-hidden bg-ink text-white group -mx-4 md:-mx-6"
+          style={{ minHeight: "clamp(460px, 62vw, 680px)" }}
+        >
+          {/* Imagens de fundo — sem overlay global para preservar as cores do produto */}
           {activeBanners.map((b, i) => (
             <div
               key={b.id}
@@ -70,8 +73,6 @@ export default function LojaHomePage() {
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               )}
-              {/* Overlay escuro para legibilidade */}
-              <div className="absolute inset-0 bg-ink/55" />
             </div>
           ))}
 
@@ -90,14 +91,24 @@ export default function LojaHomePage() {
             </div>
           )}
 
+          {/* Gradiente direcional — só atrás do bloco de texto, não cobre o produto */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-y-0 w-[55%] ${
+              banner.layoutPos === "direita"
+                ? "right-0 bg-gradient-to-l from-black/70 via-black/40 to-transparent"
+                : "left-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"
+            }`}
+          />
+
           {/* Layout: conteúdo posicionado à esquerda ou direita */}
           <div
-            className={`relative h-full flex items-center px-8 md:px-14 py-14 ${
+            className={`relative h-full flex items-center px-8 md:px-16 py-16 ${
               banner.layoutPos === "direita" ? "justify-end" : "justify-start"
             }`}
-            style={{ minHeight: "clamp(420px, 60vw, 620px)" }}
+            style={{ minHeight: "clamp(460px, 62vw, 680px)" }}
           >
-            <div className={`max-w-[480px] space-y-5 ${banner.layoutPos === "direita" ? "text-right" : "text-left"}`}>
+            <div className={`max-w-[440px] space-y-5 ${banner.layoutPos === "direita" ? "text-right" : "text-left"}`}>
               {banner.eyebrow && (
                 <div className={`flex items-center gap-2 ${banner.layoutPos === "direita" ? "justify-end" : "justify-start"}`}>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-widest backdrop-blur-sm">
