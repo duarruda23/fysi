@@ -335,14 +335,15 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
           </div>
 
           {/* Bullet points section */}
-          <div className="pt-2">
-            <ul className="list-disc pl-5 text-sm text-coal/70 space-y-2">
-              <li>Desenvolvido em alfaiataria premium de linho misto de alto padrão.</li>
-              <li>Estrutura leve com costuras francesas e acabamento interno limpo.</li>
-              <li>Bolsos laterais embutidos e fechamento traseiro invisível.</li>
-              <li>Fibra natural biodegradável produzida eticamente no Brasil.</li>
-            </ul>
-          </div>
+          {peca.bullets && peca.bullets.length > 0 && (
+            <div className="pt-2">
+              <ul className="list-disc pl-5 text-sm text-coal/70 space-y-2">
+                {peca.bullets.map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Tabs Section */}
           <div className="pt-4">
@@ -375,24 +376,18 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
             <div className="py-4 text-xs leading-relaxed text-coal/70 transition-all duration-300">
               {infoTab === "detalhes" && (
-                <p>
-                  A modelagem Fysi foi desenhada para se adaptar confortavelmente ao corpo, proporcionando leveza e frescor.
-                  <br />
-                  <span className="font-semibold text-ink">Composição:</span> 55% Linho, 45% Viscose Premium. Ideal para ocasiões casuais refinadas e eventos especiais ao ar livre.
+                <p className="whitespace-pre-line">
+                  {peca.detalheTexto || "Informações de detalhes em breve."}
                 </p>
               )}
               {infoTab === "envio" && (
-                <p>
-                  Oferecemos entrega expressa para todo o Brasil ou retirada imediata no nosso showroom físico.
-                  <br />
-                  <span className="font-semibold text-ink">Prazos:</span> Frete grátis para compras acima de R$ 400. Pedidos aprovados até as 14h são postados no mesmo dia útil.
+                <p className="whitespace-pre-line">
+                  {peca.envioTexto || "Informações de envio em breve."}
                 </p>
               )}
               {infoTab === "devolucoes" && (
-                <p>
-                  Garantimos devolução sem burocracia em até 7 dias corridos após o recebimento da encomenda.
-                  <br />
-                  <span className="font-semibold text-ink">Regra:</span> A peça deve estar com a etiqueta original fixada e sem sinais de uso. Entre em contato pelo WhatsApp de suporte para iniciar o processo.
+                <p className="whitespace-pre-line">
+                  {peca.devolucoesTexto || "Informações de devoluções em breve."}
                 </p>
               )}
             </div>

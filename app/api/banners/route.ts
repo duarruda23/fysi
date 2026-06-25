@@ -14,6 +14,8 @@ function mapRow(row: Record<string, unknown>): Banner {
     ativo: (row.ativo as boolean) ?? true,
     ordem: (row.ordem as number) ?? 0,
     criadoEm: (row.criado_em as string) ?? new Date().toISOString(),
+    watermarkTexto: (row.watermark_texto as string) ?? "",
+    layoutPos: ((row.layout_pos as string) ?? "esquerda") as "esquerda" | "direita",
   };
 }
 
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
       imagem_url: body.imagemUrl ?? "",
       ativo: body.ativo ?? true,
       ordem: nextOrdem,
+      watermark_texto: body.watermarkTexto ?? "",
+      layout_pos: body.layoutPos ?? "esquerda",
     })
     .select()
     .single();

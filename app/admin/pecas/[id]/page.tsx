@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
@@ -32,6 +32,10 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [useCustomCategory, setUseCustomCategory] = useState(false);
   const [preco, setPreco] = useState<number>(0);
   const [descricao, setDescricao] = useState("");
+  const [bullets, setBullets] = useState<string[]>([""]);
+  const [detalheTexto, setDetalheTexto] = useState("");
+  const [envioTexto, setEnvioTexto] = useState("");
+  const [devolucoesTexto, setDevolucoesTexto] = useState("");
   const [fotosInput, setFotosInput] = useState("");
   const [fotoUrl, setFotoUrl] = useState("");
   const [ativo, setAtivo] = useState(true);
@@ -58,6 +62,10 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setFotoUrl(pecaToEdit.fotos[0] || "");
       setAtivo(pecaToEdit.ativo);
       setVariacoes(pecaToEdit.variacoes);
+      setBullets(pecaToEdit.bullets?.length ? pecaToEdit.bullets : [""]);
+      setDetalheTexto(pecaToEdit.detalheTexto ?? "");
+      setEnvioTexto(pecaToEdit.envioTexto ?? "");
+      setDevolucoesTexto(pecaToEdit.devolucoesTexto ?? "");
       
       if (catNames.includes(pecaToEdit.categoria)) {
         setCategoria(pecaToEdit.categoria);
@@ -155,7 +163,11 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       descricao,
       fotos,
       ativo,
-      variacoes
+      variacoes,
+      bullets: bullets.map(b => b.trim()).filter(b => b !== ""),
+      detalheTexto,
+      envioTexto,
+      devolucoesTexto,
     };
 
     if (isEditMode && pecaToEdit) {
@@ -325,6 +337,78 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
               }`}
             />
             {errors.descricao && <p className="text-xs text-clay font-medium">{errors.descricao}</p>}
+          </div>
+
+          {/* Bullets de características */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold uppercase tracking-wider text-coal/65 block">
+              Pontos de Destaque (bullets)
+            </label>
+            <p className="text-[10px] text-coal/45">Aparecem como lista na página do produto. Deixe em branco para não exibir.</p>
+            {bullets.map((b, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={b}
+                  onChange={e => setBullets(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
+                  placeholder={`Ponto ${i + 1}...`}
+                  className="flex-1 h-9 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink"
+                />
+                <button
+                  type="button"
+                  onClick={() => setBullets(prev => prev.filter((_, idx) => idx !== i))}
+                  className="p-1.5 text-coal/40 hover:text-clay hover:bg-clay/5 rounded transition-all"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setBullets(prev => [...prev, ""])}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-gold hover:text-gold/80 transition-colors"
+            >
+              <Plus size={13} /> Adicionar ponto
+            </button>
+          </div>
+
+          {/* Abas de conteúdo */}
+          <div className="space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-wider text-coal/65 block">
+              Conteúdo das Abas
+            </label>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Detalhes</span>
+                <textarea
+                  rows={3}
+                  value={detalheTexto}
+                  onChange={e => setDetalheTexto(e.target.value)}
+                  placeholder="Composição, modelagem, acabamentos..."
+                  className="w-full p-3 rounded-md border border-ink/10 text-sm text-ink outline-none resize-none focus:border-ink"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Envio</span>
+                <textarea
+                  rows={3}
+                  value={envioTexto}
+                  onChange={e => setEnvioTexto(e.target.value)}
+                  placeholder="Prazos, frete grátis, retirada em loja..."
+                  className="w-full p-3 rounded-md border border-ink/10 text-sm text-ink outline-none resize-none focus:border-ink"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Devoluções</span>
+                <textarea
+                  rows={3}
+                  value={devolucoesTexto}
+                  onChange={e => setDevolucoesTexto(e.target.value)}
+                  placeholder="Prazo, condições, como iniciar o processo..."
+                  className="w-full p-3 rounded-md border border-ink/10 text-sm text-ink outline-none resize-none focus:border-ink"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Foto Principal — Upload */}

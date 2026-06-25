@@ -43,8 +43,8 @@ interface StoreContextProps {
 
   // Admin Session
   adminLogado: boolean;
-  loginAdmin: (usuario: string, senha: string) => boolean;
-  logoutAdmin: () => void;
+  loginAdmin: (email: string, senha: string) => Promise<{ ok: boolean; error?: string }>;
+  logoutAdmin: () => Promise<void>;
 
   // Pecas Actions
   addPeca: (pecaData: Omit<Peca, "id" | "criadoEm">) => Promise<void>;
@@ -214,12 +214,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const storedCarrinho = localStorage.getItem("fysi_carrinho");
-      const storedAdmin = localStorage.getItem("fysi_admin");
       if (storedCarrinho) setCarrinho(JSON.parse(storedCarrinho));
-      if (storedAdmin === "true") setAdminLogado(true);
     } catch {}
-    // Verificar sessão do cliente via cookie
+    // Verificar sessão do cliente e do admin via Supabase Auth
     refetchCliente();
+    fetch("/api/auth/admin/me").then(r => { if (r.ok) setAdminLogado(true); });
   }, [refetchCliente]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
@@ -231,9 +230,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Sessão do cliente é gerenciada via cookie HttpOnly — sem localStorage
 
-  useEffect(() => {
-    localStorage.setItem("fysi_admin", adminLogado ? "true" : "false");
-  }, [adminLogado]);
+  // Sessão admin gerenciada via cookie Supabase — sem localStorage
 
   const loginCliente = async (email: string, senha: string): Promise<{ ok: boolean; error?: string }> => {
     try {
@@ -274,15 +271,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // ── Admin Session ──────────────────────────────────────────────────────────
 
-  const loginAdmin = (usuario: string, senha: string): boolean => {
-    if (usuario.trim() === "admin" && senha === "fysi2026") {
+  const loginAdmin = async (email: string, senha: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/auth/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, senha }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error };
       setAdminLogado(true);
-      return true;
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Erro de conexão." };
     }
-    return false;
   };
 
-  const logoutAdmin = () => setAdminLogado(false);
+  const logoutAdmin = async () => {
+    await fetch("/api/auth/admin/logout", { method: "POST" });
+    setAdminLogado(false);
+    localStorage.removeItem("fysi_admin");
+  };
 
   // ── Pecas ────────────────────────────────────────────���─────────────────────
 

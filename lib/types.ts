@@ -19,6 +19,11 @@ export interface Peca {
   variacoes: VariacaoPeca[];
   ativo: boolean;
   criadoEm: string;
+  // Conteúdo editável da página do produto
+  bullets?: string[];
+  detalheTexto?: string;
+  envioTexto?: string;
+  devolucoesTexto?: string;
 }
 
 export type StatusPedido = "pendente" | "aprovado" | "recusado";
@@ -99,6 +104,9 @@ export interface Banner {
   ativo: boolean;
   ordem: number;
   criadoEm: string;
+  // Campos editoriais
+  watermarkTexto?: string;     // texto gigante semi-transparente ao fundo
+  layoutPos?: "esquerda" | "direita"; // onde o bloco de texto fica
 }
 
 export interface Avaliacao {

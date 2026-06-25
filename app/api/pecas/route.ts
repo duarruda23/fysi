@@ -15,6 +15,10 @@ function mapRow(row: Record<string, unknown>, variacoes: VariacaoPeca[]): Peca {
     ativo: row.ativo as boolean,
     criadoEm: row.criado_em as string,
     variacoes,
+    bullets: (row.bullets as string[]) ?? [],
+    detalheTexto: (row.detalhe_texto as string) ?? "",
+    envioTexto: (row.envio_texto as string) ?? "",
+    devolucoesTexto: (row.devolucoes_texto as string) ?? "",
   };
 }
 
@@ -70,6 +74,10 @@ export async function POST(request: Request) {
     preco: pecaData.preco,
     fotos: pecaData.fotos ?? [],
     ativo: pecaData.ativo ?? true,
+    bullets: pecaData.bullets ?? [],
+    detalhe_texto: pecaData.detalheTexto ?? "",
+    envio_texto: pecaData.envioTexto ?? "",
+    devolucoes_texto: pecaData.devolucoesTexto ?? "",
   });
 
   if (pecaError) {

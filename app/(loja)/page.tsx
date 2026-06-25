@@ -53,85 +53,141 @@ export default function LojaHomePage() {
   const banner = activeBanners[currentSlide];
 
   return (
-    <div className="space-y-16">
-      {/* Hero Carrossel */}
+    <div className="space-y-16 pt-0">
+      {/* Hero Carrossel Editorial — full-width, escapa do padding do container */}
       {activeBanners.length > 0 && banner && (
-        <section className="relative overflow-hidden rounded-2xl bg-ink text-white shadow-soft min-h-[480px] flex items-end group">
-          {/* Imagens de todos os slides (pré-carregadas, apenas o ativo fica visível) */}
+        <section
+          className="relative overflow-hidden bg-ink text-white group -mx-4 md:-mx-6"
+          style={{ minHeight: "clamp(460px, 62vw, 680px)" }}
+        >
+          {/* Imagens de fundo — sem overlay global para preservar as cores do produto */}
           {activeBanners.map((b, i) => (
-            <img
+            <div
               key={b.id}
-              src={b.imagemUrl}
-              alt={b.titulo}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
-                i === currentSlide ? "opacity-60 md:opacity-75" : "opacity-0"
-              }`}
-            />
+              className={`absolute inset-0 transition-opacity duration-700 ${i === currentSlide ? "opacity-100" : "opacity-0"}`}
+            >
+              {b.imagemUrl && (
+                <img
+                  src={b.imagemUrl}
+                  alt={b.titulo}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            </div>
           ))}
-          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-transparent" />
 
-          {/* Conteúdo do slide atual */}
-          <div className="relative p-6 md:p-12 max-w-2xl space-y-6 w-full">
-            {banner.eyebrow && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-medium backdrop-blur">
-                <Sparkles size={13} className="text-gold" />
-                {banner.eyebrow}
-              </div>
-            )}
-            <h1 className="font-serif text-4xl font-semibold leading-tight md:text-6xl">
-              {banner.titulo}
-            </h1>
-            {banner.subtitulo && (
-              <p className="text-sm md:text-base text-white/80 leading-relaxed max-w-lg">
-                {banner.subtitulo}
-              </p>
-            )}
-            {banner.botaoTexto && (
-              <div className="pt-2">
-                <Link
-                  href={banner.botaoLink || "/produtos"}
-                  className="inline-flex h-12 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-md active:scale-95"
-                >
-                  {banner.botaoTexto}
-                  <ArrowRight size={16} />
-                </Link>
-              </div>
-            )}
+          {/* Watermark — texto gigante semi-transparente ao fundo */}
+          {banner.watermarkTexto && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden select-none"
+            >
+              <span
+                className="font-serif font-black uppercase text-white/[0.07] whitespace-nowrap leading-none tracking-tight"
+                style={{ fontSize: "clamp(5rem, 18vw, 16rem)" }}
+              >
+                {banner.watermarkTexto}
+              </span>
+            </div>
+          )}
+
+          {/* Gradiente direcional — só atrás do bloco de texto, não cobre o produto */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-y-0 w-[55%] ${
+              banner.layoutPos === "direita"
+                ? "right-0 bg-gradient-to-l from-black/70 via-black/40 to-transparent"
+                : "left-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"
+            }`}
+          />
+
+          {/* Layout: conteúdo posicionado à esquerda ou direita */}
+          <div
+            className={`relative h-full flex items-center px-8 md:px-16 py-16 ${
+              banner.layoutPos === "direita" ? "justify-end" : "justify-start"
+            }`}
+            style={{ minHeight: "clamp(460px, 62vw, 680px)" }}
+          >
+            <div className={`max-w-[440px] space-y-5 ${banner.layoutPos === "direita" ? "text-right" : "text-left"}`}>
+              {banner.eyebrow && (
+                <div className={`flex items-center gap-2 ${banner.layoutPos === "direita" ? "justify-end" : "justify-start"}`}>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-[11px] font-semibold uppercase tracking-widest backdrop-blur-sm">
+                    <Sparkles size={11} className="text-gold" />
+                    {banner.eyebrow}
+                  </span>
+                </div>
+              )}
+              <h1 className="font-serif font-bold leading-[1.05] tracking-tight" style={{ fontSize: "clamp(2.2rem, 5vw, 4rem)" }}>
+                {banner.titulo}
+              </h1>
+              {banner.subtitulo && (
+                <p className="text-sm text-white/70 leading-relaxed max-w-sm">
+                  {banner.subtitulo}
+                </p>
+              )}
+              {banner.botaoTexto && (
+                <div className="pt-2">
+                  <Link
+                    href={banner.botaoLink || "/produtos"}
+                    className="inline-flex h-11 items-center gap-2 rounded-md bg-gold px-6 text-sm font-bold text-ink hover:bg-gold/90 transition-all shadow-lg active:scale-95"
+                  >
+                    {banner.botaoTexto}
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Controles de navegação — só aparecem com 2+ banners */}
+          {/* Controles de navegação */}
           {activeBanners.length > 1 && (
             <>
               <button
                 onClick={prevSlide}
                 aria-label="Banner anterior"
-                className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
+                className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
               <button
                 onClick={nextSlide}
                 aria-label="Próximo banner"
-                className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-all opacity-0 group-hover:opacity-100"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
 
-              {/* Indicadores (bolinhas) */}
-              <div className="absolute bottom-5 right-6 flex gap-1.5">
+              {/* Indicadores */}
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-1.5">
                 {activeBanners.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentSlide(i)}
                     aria-label={`Ir para banner ${i + 1}`}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentSlide ? "bg-gold w-6" : "bg-white/40 w-1.5 hover:bg-white/70"
+                    className={`h-[3px] rounded-full transition-all duration-300 ${
+                      i === currentSlide ? "bg-gold w-8" : "bg-white/30 w-3 hover:bg-white/60"
                     }`}
                   />
                 ))}
               </div>
             </>
           )}
+
+          {/* Ticker marquee na base do banner */}
+          <div className="absolute bottom-0 left-0 right-0 h-10 bg-black/40 backdrop-blur-sm border-t border-white/10 overflow-hidden flex items-center">
+            <div className="flex animate-[marquee_30s_linear_infinite] whitespace-nowrap">
+              {[...Array(6)].map((_, i) => (
+                <span key={i} className="inline-flex items-center gap-4 px-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">
+                  <span>Nova Coleção</span>
+                  <span className="text-gold">→</span>
+                  <span>Fysi Atacado</span>
+                  <span className="text-gold">→</span>
+                  <span>Peças Exclusivas</span>
+                  <span className="text-gold">→</span>
+                </span>
+              ))}
+            </div>
+          </div>
         </section>
       )}
 

@@ -1,19 +1,16 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/proxy";
 
 /**
- * Middleware mínimo: apenas propaga cookies do Supabase sem chamar a API
- * de auth a cada request (o app não usa Supabase Auth para login de cliente/admin).
+ * Middleware: renova o cookie de sessão do Supabase Auth a cada request,
+ * garantindo que tokens expirados sejam atualizados automaticamente.
  */
-export function middleware(request: NextRequest) {
-  return NextResponse.next({ request });
+export async function middleware(request: NextRequest) {
+  return await updateSession(request);
 }
 
 export const config = {
   matcher: [
-    /*
-     * Ignora arquivos estáticos, imagens e rotas internas do Next.js.
-     * Aplica apenas a rotas de página e API.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
