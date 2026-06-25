@@ -104,6 +104,9 @@ export interface Banner {
   ativo: boolean;
   ordem: number;
   criadoEm: string;
+  // Campos editoriais
+  watermarkTexto?: string;     // texto gigante semi-transparente ao fundo
+  layoutPos?: "esquerda" | "direita"; // onde o bloco de texto fica
 }
 
 export interface Avaliacao {

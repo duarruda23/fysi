@@ -33,3 +33,8 @@ img {
   background: #ccb72f;
   color: #11100e;
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

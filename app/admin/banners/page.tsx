@@ -17,6 +17,8 @@ const EMPTY: Omit<Banner, "id" | "ordem" | "criadoEm"> = {
   botaoLink: "/produtos",
   imagemUrl: "",
   ativo: true,
+  watermarkTexto: "",
+  layoutPos: "esquerda",
 };
 
 function BannerForm({
@@ -41,10 +43,12 @@ function BannerForm({
   const [botaoLink, setBotaoLink] = useState(initial.botaoLink);
   const [imagemUrl, setImagemUrl] = useState(initial.imagemUrl);
   const [ativo, setAtivo] = useState(initial.ativo);
+  const [watermarkTexto, setWatermarkTexto] = useState(initial.watermarkTexto ?? "");
+  const [layoutPos, setLayoutPos] = useState<"esquerda" | "direita">(initial.layoutPos ?? "esquerda");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave({ titulo, subtitulo, eyebrow, botaoTexto, botaoLink, imagemUrl, ativo });
+    await onSave({ titulo, subtitulo, eyebrow, botaoTexto, botaoLink, imagemUrl, ativo, watermarkTexto, layoutPos });
   };
 
   const preview = { titulo, subtitulo, eyebrow, botaoTexto, imagemUrl, ativo };
@@ -72,6 +76,41 @@ function BannerForm({
             <textarea value={subtitulo} onChange={(e) => setSubtitulo(e.target.value)} rows={3}
               placeholder="Descrição exibida abaixo do título..."
               className="w-full rounded-md border border-ink/15 bg-pearl px-4 py-2.5 text-sm text-ink placeholder:text-coal/30 focus:outline-none focus:ring-2 focus:ring-gold/40 resize-none" />
+          </div>
+        </div>
+
+        {/* Estética editorial */}
+        <div className="bg-white rounded-xl border border-ink/10 p-6 space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-coal/50">Estética Editorial</h3>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-coal/60">Texto Watermark</label>
+            <p className="text-[10px] text-coal/40">Aparece gigante e semi-transparente ao fundo do banner (ex: FYSI, VERÃO, NOVA COLEÇÃO).</p>
+            <input
+              type="text"
+              value={watermarkTexto}
+              onChange={(e) => setWatermarkTexto(e.target.value)}
+              placeholder="Ex: FYSI"
+              className="w-full rounded-md border border-ink/15 bg-pearl px-4 py-2.5 text-sm text-ink placeholder:text-coal/30 focus:outline-none focus:ring-2 focus:ring-gold/40"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-coal/60">Posição do Conteúdo</label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["esquerda", "direita"] as const).map((pos) => (
+                <button
+                  key={pos}
+                  type="button"
+                  onClick={() => setLayoutPos(pos)}
+                  className={`h-10 rounded-md border text-sm font-semibold capitalize transition-all ${
+                    layoutPos === pos
+                      ? "border-ink bg-ink text-white"
+                      : "border-ink/15 bg-pearl text-coal/60 hover:border-ink/40"
+                  }`}
+                >
+                  {pos === "esquerda" ? "← Esquerda" : "Direita →"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

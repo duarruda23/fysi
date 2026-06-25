@@ -21,6 +21,8 @@ export async function PUT(
       imagem_url: body.imagemUrl,
       ativo: body.ativo,
       ordem: body.ordem,
+      watermark_texto: body.watermarkTexto,
+      layout_pos: body.layoutPos,
     })
     .eq("id", id);
 
