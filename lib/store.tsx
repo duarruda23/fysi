@@ -155,32 +155,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   // Carregar dados do Supabase na montagem
+  // Usa allSettled para que a falha de UM endpoint não derrube todos os outros
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    try {
-      const [pecasData, pedidosData, categoriasData, promocoesData, vipData, configData, bannersData] =
-        await Promise.all([
-          apiFetch<Peca[]>("/api/pecas"),
-          apiFetch<Pedido[]>("/api/pedidos"),
-          apiFetch<Categoria[]>("/api/categorias"),
-          apiFetch<Promocao[]>("/api/promocoes"),
-          apiFetch<InscricaoVIP[]>("/api/lista-vip"),
-          apiFetch<ConfiguracoesLoja>("/api/configuracoes"),
-          apiFetch<Banner[]>("/api/banners"),
-        ]);
 
-      setPecas(pecasData);
-      setPedidos(pedidosData);
-      setCategorias(categoriasData);
-      setPromocoes(promocoesData);
-      setListaVip(vipData);
-      setConfiguracoes(configData);
-      setBanners(Array.isArray(bannersData) ? bannersData : []);
-    } catch (err) {
-      console.error("[Store] Erro ao carregar dados:", err);
-    } finally {
-      setLoading(false);
-    }
+    const settle = async <T,>(url: string, fallback: T, set: (v: T) => void) => {
+      try {
+        const data = await apiFetch<T>(url);
+        set(data);
+      } catch (err) {
+        console.error(`[Store] Falha ao carregar ${url}:`, err);
+        set(fallback);
+      }
+    };
+
+    await Promise.allSettled([
+      settle<Peca[]>("/api/pecas", [], setPecas),
+      settle<Pedido[]>("/api/pedidos", [], setPedidos),
+      settle<Categoria[]>("/api/categorias", [], setCategorias),
+      settle<Promocao[]>("/api/promocoes", [], setPromocoes),
+      settle<InscricaoVIP[]>("/api/lista-vip", [], setListaVip),
+      settle<ConfiguracoesLoja>("/api/configuracoes", defaultConfigs, setConfiguracoes),
+      settle<Banner[]>("/api/banners", [], (v) => setBanners(Array.isArray(v) ? v : [])),
+    ]);
+
+    setLoading(false);
   }, []);
 
   // Rebuscar apenas peças do banco (usado após cadastro/edição)
