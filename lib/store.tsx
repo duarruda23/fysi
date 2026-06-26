@@ -222,10 +222,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // Persistir carrinho e sessão em localStorage
+  // Persistir carrinho em localStorage
   useEffect(() => {
     localStorage.setItem("fysi_carrinho", JSON.stringify(carrinho));
   }, [carrinho]);
+
+  // Salvar carrinho abandonado no banco quando cliente logado tem itens
+  useEffect(() => {
+    if (!clienteLogado?.id) return;
+    // Debounce: aguarda 3s de inatividade antes de salvar
+    const timer = setTimeout(async () => {
+      try {
+        await fetch(`/api/clientes/${clienteLogado.id}/carrinho`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ carrinho }),
+        });
+      } catch {}
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [carrinho, clienteLogado?.id]);
 
   // Sessão do cliente é gerenciada via cookie HttpOnly — sem localStorage
 
