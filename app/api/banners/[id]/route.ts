@@ -10,20 +10,22 @@ export async function PUT(
   const { id } = await params;
   const body = await req.json();
 
+  // Monta payload apenas com campos presentes (evita sobrescrever com undefined/null)
+  const payload: Record<string, unknown> = {};
+  if (body.titulo !== undefined)        payload.titulo = body.titulo;
+  if (body.subtitulo !== undefined)     payload.subtitulo = body.subtitulo;
+  if (body.eyebrow !== undefined)       payload.eyebrow = body.eyebrow;
+  if (body.botaoTexto !== undefined)    payload.botao_texto = body.botaoTexto;
+  if (body.botaoLink !== undefined)     payload.botao_link = body.botaoLink;
+  if (body.imagemUrl !== undefined)     payload.imagem_url = body.imagemUrl;
+  if (body.ativo !== undefined)         payload.ativo = body.ativo;
+  if (body.ordem !== undefined)         payload.ordem = body.ordem;
+  if (body.watermarkTexto !== undefined) payload.watermark_texto = body.watermarkTexto;
+  if (body.layoutPos !== undefined)     payload.layout_pos = body.layoutPos;
+
   const { error } = await supabase
     .from("banners")
-    .update({
-      titulo: body.titulo,
-      subtitulo: body.subtitulo,
-      eyebrow: body.eyebrow,
-      botao_texto: body.botaoTexto,
-      botao_link: body.botaoLink,
-      imagem_url: body.imagemUrl,
-      ativo: body.ativo,
-      ordem: body.ordem,
-      watermark_texto: body.watermarkTexto,
-      layout_pos: body.layoutPos,
-    })
+    .update(payload)
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
