@@ -58,13 +58,13 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   // Load existing piece data
   useEffect(() => {
     if (isEditMode && pecaToEdit) {
-      setNome(pecaToEdit.nome);
-      setReferencia(pecaToEdit.referencia);
-      setDescricao(pecaToEdit.descricao);
-      setPreco(pecaToEdit.preco);
-      setFotos(pecaToEdit.fotos.length > 0 ? pecaToEdit.fotos : [""]);
-      setAtivo(pecaToEdit.ativo);
-      setVariacoes(pecaToEdit.variacoes);
+      setNome(pecaToEdit.nome ?? "");
+      setReferencia(pecaToEdit.referencia ?? "");
+      setDescricao(pecaToEdit.descricao ?? "");
+      setPreco(pecaToEdit.preco ?? 0);
+      setFotos(pecaToEdit.fotos?.length ? pecaToEdit.fotos : [""]);
+      setAtivo(pecaToEdit.ativo ?? true);
+      setVariacoes(Array.isArray(pecaToEdit.variacoes) ? pecaToEdit.variacoes : []);
       setBullets(pecaToEdit.bullets?.length ? pecaToEdit.bullets : [""]);
       setDetalheTexto(pecaToEdit.detalheTexto ?? "");
       setEnvioTexto(pecaToEdit.envioTexto ?? "");
