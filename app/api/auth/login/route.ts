@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
 
   // Se falhou por email não confirmado, confirma e tenta novamente
   if (error?.message?.toLowerCase().includes("email not confirmed")) {
-    const { data: userData } = await supabaseService.auth.admin.getUserByEmail(emailNorm);
-    if (userData?.user) {
-      await supabaseService.auth.admin.updateUserById(userData.user.id, { email_confirm: true });
+    const { data: listData } = await supabaseService.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const found = listData?.users?.find((u: any) => u.email === emailNorm);
+    if (found) {
+      await supabaseService.auth.admin.updateUserById(found.id, { email_confirm: true });
       const retry = await supabaseAdmin.auth.signInWithPassword({ email: emailNorm, password: senha });
       data = retry.data;
       error = retry.error;
