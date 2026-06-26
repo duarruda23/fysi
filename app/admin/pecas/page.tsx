@@ -11,7 +11,8 @@ function currency(value: number) {
 }
 
 function stockTotal(peca: Peca) {
-  return peca.variacoes.reduce((total, variacao) => total + variacao.quantidadeEstoque, 0);
+  if (!Array.isArray(peca.variacoes)) return 0;
+  return peca.variacoes.reduce((total, variacao) => total + (variacao?.quantidadeEstoque ?? 0), 0);
 }
 
 export default function AdminPiecesPage() {
@@ -31,8 +32,8 @@ export default function AdminPiecesPage() {
       // Search filter
       if (searchTerm) {
         const query = searchTerm.toLowerCase();
-        const matchesName = peca.nome.toLowerCase().includes(query);
-        const matchesRef = peca.referencia.toLowerCase().includes(query);
+        const matchesName = (peca.nome ?? "").toLowerCase().includes(query);
+        const matchesRef = (peca.referencia ?? "").toLowerCase().includes(query);
         if (!matchesName && !matchesRef) return false;
       }
       
@@ -126,7 +127,7 @@ export default function AdminPiecesPage() {
               >
                 {/* Thumbnail */}
                 <div className="h-12 w-10 bg-linen rounded overflow-hidden border border-ink/10">
-                  <img src={peca.fotos[0] || "/brand/logo-preto.png"} alt={peca.nome} className="h-full w-full object-cover" />
+                  <img src={peca.fotos?.[0] || "/brand/logo-preto.png"} alt={peca.nome} className="h-full w-full object-cover" />
                 </div>
 
                 {/* Name / SKU */}
