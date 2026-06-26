@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, use } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-react";
@@ -11,10 +11,10 @@ import { TAMANHOS_LETRA, TAMANHOS_NUMERO } from "@/lib/types";
 
 type ModoTamanho = "letra" | "numero";
 
-export default function AdminPieceEditorPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AdminPieceEditorPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { pecas, addPeca, updatePeca, categorias } = useStore();
-  const { id: pieceId } = use(params);
+  const pieceId = params.id;
 
   const catNames = useMemo(() => categorias.map(c => c.nome), [categorias]);
 
