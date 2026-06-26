@@ -7,8 +7,9 @@ import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-re
 import { useStore } from "@/lib/store";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
+import { TAMANHOS_LETRA, TAMANHOS_NUMERO } from "@/lib/types";
 
-const TAMANHOS: Tamanho[] = ["PP", "P", "M", "G", "GG", "XG"];
+type ModoTamanho = "letra" | "numero";
 
 export default function AdminPieceEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -48,6 +49,7 @@ export default function AdminPieceEditorPage({ params }: { params: Promise<{ id:
   const [varCorHex, setVarCorHex] = useState("#ffffff");
   const [varTamanho, setVarTamanho] = useState<Tamanho>("M");
   const [varEstoque, setVarEstoque] = useState<number>(10);
+  const [modoTamanho, setModoTamanho] = useState<ModoTamanho>("letra");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -541,22 +543,49 @@ export default function AdminPieceEditorPage({ params }: { params: Promise<{ id:
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* Tamanho */}
-              <div className="space-y-1">
+            {/* Tamanho — seletor visual com dois modos */}
+            <div className="space-y-2 col-span-2">
+              <div className="flex items-center justify-between">
                 <span className="text-[10px] uppercase tracking-wider text-coal/50 font-semibold">Tamanho</span>
-                <select
-                  value={varTamanho}
-                  onChange={(e) => setVarTamanho(e.target.value as Tamanho)}
-                  className="w-full h-8 px-2 rounded border border-ink/10 bg-white text-xs text-ink outline-none"
-                >
-                  {TAMANHOS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                {/* Alternador de modo */}
+                <div className="inline-flex rounded border border-ink/10 overflow-hidden text-[10px] font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => { setModoTamanho("letra"); setVarTamanho("M"); }}
+                    className={`px-2.5 py-1 transition-colors ${modoTamanho === "letra" ? "bg-ink text-white" : "bg-white text-coal/60 hover:bg-pearl"}`}
+                  >
+                    P/M/G
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setModoTamanho("numero"); setVarTamanho("40"); }}
+                    className={`px-2.5 py-1 transition-colors ${modoTamanho === "numero" ? "bg-ink text-white" : "bg-white text-coal/60 hover:bg-pearl"}`}
+                  >
+                    Numeração
+                  </button>
+                </div>
               </div>
+
+              {/* Grade de botões de tamanho */}
+              <div className={`flex flex-wrap gap-1.5`}>
+                {(modoTamanho === "letra" ? TAMANHOS_LETRA : TAMANHOS_NUMERO).map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setVarTamanho(size)}
+                    className={`h-7 min-w-[2.25rem] px-2 rounded text-xs font-semibold border transition-all ${
+                      varTamanho === size
+                        ? "bg-ink text-white border-ink"
+                        : "bg-white text-coal/70 border-ink/15 hover:border-ink/40"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
 
               {/* Quantidade */}
               <div className="space-y-1">
