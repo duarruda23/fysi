@@ -218,24 +218,31 @@ export default function AdminBannersPage() {
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const sorted = [...banners].sort((a, b) => a.ordem - b.ordem);
 
   const handleCreate = async (data: Omit<Banner, "id" | "ordem" | "criadoEm">) => {
     setSaving(true);
+    setSaveError(null);
     try {
       await addBanner(data);
       setSaved(true);
       setTimeout(() => { setSaved(false); setCreating(false); }, 1500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao criar banner. Tente novamente.");
     } finally { setSaving(false); }
   };
 
   const handleUpdate = async (id: string, data: Omit<Banner, "id" | "ordem" | "criadoEm">) => {
     setSaving(true);
+    setSaveError(null);
     try {
       await updateBanner(id, data);
       setSaved(true);
       setTimeout(() => { setSaved(false); setEditingId(null); }, 1500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao atualizar banner. Tente novamente.");
     } finally { setSaving(false); }
   };
 
@@ -293,6 +300,14 @@ export default function AdminBannersPage() {
           </button>
         )}
       </div>
+
+      {/* Banner de erro */}
+      {saveError && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="font-bold shrink-0">Erro:</span>
+          <p>{saveError}</p>
+        </div>
+      )}
 
       {/* Formulário de criação */}
       {creating && (
