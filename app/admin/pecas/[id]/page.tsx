@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-react";
@@ -10,19 +10,20 @@ import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
 
 const TAMANHOS: Tamanho[] = ["PP", "P", "M", "G", "GG", "XG"];
 
-export default function AdminPieceEditorPage({ params }: { params: { id: string } }) {
+export default function AdminPieceEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { pecas, addPeca, updatePeca, categorias } = useStore();
+  const { id: pieceId } = use(params);
 
   const catNames = useMemo(() => categorias.map(c => c.nome), [categorias]);
 
-  const isEditMode = params.id !== "nova";
+  const isEditMode = pieceId !== "nova";
 
   // Locate the target piece if in edit mode
   const pecaToEdit = useMemo(() => {
     if (!isEditMode) return null;
-    return pecas.find((p) => p.id === params.id) || null;
-  }, [pecas, params.id, isEditMode]);
+    return pecas.find((p) => p.id === pieceId) || null;
+  }, [pecas, pieceId, isEditMode]);
 
   // Form Field States
   const [nome, setNome] = useState("");
@@ -49,6 +50,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [varEstoque, setVarEstoque] = useState<number>(10);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Load existing piece data
   useEffect(() => {
@@ -138,34 +141,43 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
     e.preventDefault();
     if (!validate()) return;
 
-    // Filtra slots vazios e aplica fallback
-    const fotosFinais = fotos.filter((url) => url.trim() !== "");
-    if (fotosFinais.length === 0) fotosFinais.push("/brand/logo-preto.png");
+    setSaveError(null);
+    setSaving(true);
 
-    const finalCat = useCustomCategory ? novaCategoria : categoria;
+    try {
+      // Filtra slots vazios e aplica fallback
+      const fotosFinais = fotos.filter((url) => url.trim() !== "");
+      if (fotosFinais.length === 0) fotosFinais.push("/brand/logo-preto.png");
 
-    const pecaData = {
-      nome,
-      referencia,
-      categoria: finalCat,
-      preco,
-      descricao,
-      fotos: fotosFinais,
-      ativo,
-      variacoes,
-      bullets: bullets.map(b => b.trim()).filter(b => b !== ""),
-      detalheTexto,
-      envioTexto,
-      devolucoesTexto,
-    };
+      const finalCat = useCustomCategory ? novaCategoria : categoria;
 
-    if (isEditMode && pecaToEdit) {
-      await updatePeca(pecaToEdit.id, pecaData);
-    } else {
-      await addPeca(pecaData);
+      const pecaData = {
+        nome,
+        referencia,
+        categoria: finalCat,
+        preco,
+        descricao,
+        fotos: fotosFinais,
+        ativo,
+        variacoes,
+        bullets: bullets.map(b => b.trim()).filter(b => b !== ""),
+        detalheTexto,
+        envioTexto,
+        devolucoesTexto,
+      };
+
+      if (isEditMode && pecaToEdit) {
+        await updatePeca(pecaToEdit.id, pecaData);
+      } else {
+        await addPeca(pecaData);
+      }
+
+      router.push("/admin/pecas");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Erro ao salvar a peça. Tente novamente.");
+    } finally {
+      setSaving(false);
     }
-
-    router.push("/admin/pecas");
   };
 
   return (
@@ -182,6 +194,14 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
           {isEditMode ? `Editar Peça: ${pecaToEdit?.nome}` : "Cadastrar Nova Peça"}
         </h2>
       </div>
+
+      {/* Banner de erro de save */}
+      {saveError && (
+        <div className="flex items-start gap-3 rounded-xl border border-clay/30 bg-clay/10 px-4 py-3 text-sm text-clay">
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <p>{saveError}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSave} className="grid gap-6 lg:grid-cols-[1fr_400px]">
         {/* Left Side: Metadata Fields */}
@@ -470,10 +490,11 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
             </Link>
             <button
               type="submit"
-              className="flex-1 h-11 bg-ink hover:bg-coal text-white font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
+              disabled={saving}
+              className="flex-1 h-11 bg-ink hover:bg-coal text-white font-semibold rounded-md flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <CheckCircle2 size={16} />
-              <span>Salvar Peça</span>
+              <span>{saving ? "Salvando..." : "Salvar Peça"}</span>
             </button>
           </div>
         </div>
