@@ -1,5 +1,38 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+
+// Cliente com anon key — para o signUp
+const supabaseAnon = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { persistSession: false } }
+);
+
+// Cliente com service role — para confirmar email e inserir em clientes
+const supabaseService = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false, autoRefreshToken: false } }
+);
+
+const projectRef = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+  .replace("https://", "")
+  .split(".")[0];
+
+function buildSessionCookie(session: any): string {
+  const cookieName = `sb-${projectRef}-auth-token`;
+  const sessionJson = JSON.stringify({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_at: session.expires_at,
+    expires_in: session.expires_in,
+    token_type: session.token_type,
+    user: session.user,
+  });
+  const maxAge = session.expires_in ?? 3600;
+  const isSecure = process.env.NODE_ENV === "production";
+  return `${cookieName}=${encodeURIComponent(sessionJson)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${isSecure ? "; Secure" : ""}`;
+}
 
 export async function POST(request: Request) {
   const { nome, email, telefone, senha } = await request.json();
@@ -11,17 +44,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A senha deve ter pelo menos 6 caracteres." }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const nomeTrimmed = nome.trim();
+  const emailNorm = email.toLowerCase().trim();
+  const telefoneTrimmed = telefone?.trim() ?? "";
 
-  // Supabase Auth cria o usuário; o trigger handle_new_auth_user() insere na tabela clientes
-  const { data, error } = await supabase.auth.signUp({
-    email: email.toLowerCase().trim(),
+  // 1. Criar usuário no Auth
+  const { data, error } = await supabaseAnon.auth.signUp({
+    email: emailNorm,
     password: senha,
     options: {
-      data: { nome: nome.trim(), telefone: telefone?.trim() ?? "" },
-      emailRedirectTo:
-        process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ??
-        `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback`,
+      data: { nome: nomeTrimmed, telefone: telefoneTrimmed },
     },
   });
 
@@ -36,13 +68,46 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Erro ao criar conta." }, { status: 500 });
   }
 
-  return NextResponse.json(
-    {
-      id: data.user.id,
-      nome: nome.trim(),
-      email: data.user.email,
-      telefone: telefone?.trim() ?? "",
-    },
-    { status: 201 }
-  );
+  // 2. Confirmar email automaticamente via Admin API (service role)
+  // Isso permite que o usuário faça login imediatamente sem confirmar email
+  await supabaseService.auth.admin.updateUserById(data.user.id, {
+    email_confirm: true,
+  });
+
+  // 3. Garantir que o cliente existe na tabela clientes
+  await supabaseService
+    .from("clientes")
+    .upsert(
+      {
+        id: data.user.id,
+        nome: nomeTrimmed,
+        email: emailNorm,
+        telefone: telefoneTrimmed,
+        senha_hash: "",
+        total_gasto: 0,
+      },
+      { onConflict: "id" }
+    );
+
+  // 4. Fazer login imediato para gerar sessão após confirmação
+  const { data: signInData, error: signInError } = await supabaseAnon.auth.signInWithPassword({
+    email: emailNorm,
+    password: senha,
+  });
+
+  const body = {
+    id: data.user.id,
+    nome: nomeTrimmed,
+    email: emailNorm,
+    telefone: telefoneTrimmed,
+  };
+
+  const response = NextResponse.json(body, { status: 201 });
+
+  // 5. Gravar o cookie de sessão para o cliente já ficar logado
+  if (signInData?.session && !signInError) {
+    response.headers.set("Set-Cookie", buildSessionCookie(signInData.session));
+  }
+
+  return response;
 }
