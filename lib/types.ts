@@ -1,4 +1,11 @@
-export type Tamanho = "PP" | "P" | "M" | "G" | "GG" | "XG";
+// Tamanhos por letra
+export const TAMANHOS_LETRA = ["PP", "P", "M", "G", "GG", "XG", "XGG"] as const;
+// Tamanhos por numeração
+export const TAMANHOS_NUMERO = ["26", "28", "34", "36", "38", "40", "42", "44", "46", "48", "50", "52", "54", "56", "58", "60"] as const;
+
+export type TamanhoLetra = typeof TAMANHOS_LETRA[number];
+export type TamanhoNumero = typeof TAMANHOS_NUMERO[number];
+export type Tamanho = TamanhoLetra | TamanhoNumero | string;
 
 export interface VariacaoPeca {
   id: string;
