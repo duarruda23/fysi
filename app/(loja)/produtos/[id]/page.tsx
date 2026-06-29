@@ -23,14 +23,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
   // States
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [quantidadesGrade, setQuantidadesGrade] = useState<Record<Tamanho, number>>({
-    PP: 0,
-    P: 0,
-    M: 0,
-    G: 0,
-    GG: 0,
-    XG: 0
-  });
+  const [quantidadesGrade, setQuantidadesGrade] = useState<Record<string, number>>({});
   const [vipSelectedSize, setVipSelectedSize] = useState<Tamanho | null>(null);
   const [addedMessage, setAddedMessage] = useState(false);
   const [infoTab, setInfoTab] = useState<"detalhes" | "envio" | "devolucoes">("detalhes");
@@ -140,22 +133,20 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
     return photos;
   }, [peca]);
 
-  // Reset quantities on activeColor change
+  // Reset quantities on activeColor change — inicializa todas as chaves com 0
   useEffect(() => {
-    setQuantidadesGrade({
-      PP: 0,
-      P: 0,
-      M: 0,
-      G: 0,
-      GG: 0,
-      XG: 0
-    });
+    if (!peca) return;
+    const initial: Record<string, number> = {};
+    peca.variacoes
+      .filter((v) => v.cor === (selectedColor ?? availableColors[0]?.name))
+      .forEach((v) => { initial[v.tamanho] = 0; });
+    setQuantidadesGrade(initial);
     setVipSelectedSize(null);
     setVipSuccess(false);
-  }, [activeColor]);
+  }, [activeColor, peca]);
 
   const totalPecasSelecionadas = useMemo(() => {
-    return Object.values(quantidadesGrade).reduce((sum, q) => sum + q, 0);
+    return Object.values(quantidadesGrade).reduce((sum, q) => sum + (isNaN(q) ? 0 : q), 0);
   }, [quantidadesGrade]);
 
   const valorTotalGrade = useMemo(() => {
@@ -505,7 +496,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 onClick={() => {
                                   setQuantidadesGrade(prev => ({
                                     ...prev,
-                                    [size]: Math.max(0, prev[size] - 1)
+                                    [size]: Math.max(0, (prev[size] ?? 0) - 1)
                                   }));
                                 }}
                                 className="px-1.5 py-0.5 text-coal/50 hover:text-ink"
@@ -516,7 +507,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 type="number"
                                 min="0"
                                 max={stock}
-                                value={quantidadesGrade[size]}
+                                value={quantidadesGrade[size] ?? 0}
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value) || 0;
                                   setQuantidadesGrade(prev => ({
@@ -531,7 +522,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
                                 onClick={() => {
                                   setQuantidadesGrade(prev => ({
                                     ...prev,
-                                    [size]: Math.min(stock, prev[size] + 1)
+                                    [size]: Math.min(stock, (prev[size] ?? 0) + 1)
                                   }));
                                 }}
                                 className="px-1.5 py-0.5 text-coal/50 hover:text-ink"
