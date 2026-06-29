@@ -38,7 +38,17 @@ export default function LojaFooter() {
 
         <div className="pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs text-white/40">
           <p>© {new Date().getFullYear()} Fysi. Todos os direitos reservados.</p>
-          <p>Feito com elegância para vender, clareza para gerenciar.</p>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/politica-de-privacidade" className="hover:text-white/70 transition-colors">
+              Política de Privacidade
+            </Link>
+            <Link href="/termos-de-uso" className="hover:text-white/70 transition-colors">
+              Termos de Uso
+            </Link>
+            <Link href="/termos-de-servico" className="hover:text-white/70 transition-colors">
+              Termos de Serviço
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
