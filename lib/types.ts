@@ -116,6 +116,15 @@ export interface Banner {
   layoutPos?: "esquerda" | "direita"; // onde o bloco de texto fica
 }
 
+export interface FaqItem {
+  id: string;
+  pergunta: string;
+  resposta: string;
+  ordem: number;
+  ativo: boolean;
+  criado_em: string;
+}
+
 export interface Avaliacao {
   id: string;
   pecaId: string;

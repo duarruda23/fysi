@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import type { Tamanho, VariacaoPeca, Avaliacao } from "@/lib/types";
 import { trackAddToCartEvent } from "@/components/AnalyticsScripts";
 import { Avaliacoes } from "@/components/Avaliacoes";
+import FaqSection from "@/components/FaqSection";
 
 function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -692,6 +693,9 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       <div id="avaliacoes" className="border-t border-ink/10 pt-10">
         <Avaliacoes pecaId={peca.id} />
       </div>
+
+      {/* FAQ — abaixo das avaliações */}
+      <FaqSection />
     </div>
   );
 }
