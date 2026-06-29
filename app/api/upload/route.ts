@@ -10,9 +10,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
     }
 
-    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif"];
     if (!allowed.includes(file.type)) {
-      return NextResponse.json({ error: "Formato inválido. Use JPG, PNG ou WebP." }, { status: 400 });
+      return NextResponse.json({ error: "Formato inválido. Use JPG, PNG, WebP ou AVIF." }, { status: 400 });
     }
 
     const MAX_MB = 5;

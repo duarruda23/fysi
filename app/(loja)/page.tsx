@@ -70,7 +70,14 @@ export default function LojaHomePage() {
                 <img
                   src={b.imagemUrl}
                   alt={b.titulo}
+                  width={1440}
+                  height={680}
                   className="absolute inset-0 h-full w-full object-cover"
+                  // Primeiro banner: carrega com máxima prioridade (LCP)
+                  // Demais banners: lazy para não competir com recursos críticos
+                  fetchPriority={i === 0 ? "high" : "low"}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding={i === 0 ? "sync" : "async"}
                 />
               )}
             </div>

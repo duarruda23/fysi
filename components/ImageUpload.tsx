@@ -103,7 +103,7 @@ export function ImageUpload({ value, onChange, label, hint }: ImageUploadProps) 
                 <p className="text-sm font-semibold text-ink">
                   Clique para escolher ou arraste aqui
                 </p>
-                <p className="text-xs text-coal/50 mt-0.5">JPG, PNG ou WebP — máximo 5MB</p>
+                <p className="text-xs text-coal/50 mt-0.5">JPG, PNG, WebP ou AVIF — máximo 5MB</p>
               </div>
             </>
           )}
@@ -114,7 +114,7 @@ export function ImageUpload({ value, onChange, label, hint }: ImageUploadProps) 
       <input
         ref={inputRef}
         type="file"
-        accept="image/jpeg,image/jpg,image/png,image/webp"
+        accept="image/jpeg,image/jpg,image/png,image/webp,image/avif"
         onChange={handleInputChange}
         className="sr-only"
       />
