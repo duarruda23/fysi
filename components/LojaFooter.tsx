@@ -33,22 +33,22 @@ export default function LojaFooter() {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] font-semibold text-gold mb-4">Administração</h4>
-            <ul className="space-y-2.5 text-sm text-white/60">
-              <li>
-                <Link href="/admin" className="hover:text-white transition-colors">Painel Admin</Link>
-              </li>
-              <li>
-                <Link href="/design" className="hover:text-white transition-colors">Design System</Link>
-              </li>
-            </ul>
-          </div>
+
         </div>
 
         <div className="pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs text-white/40">
           <p>© {new Date().getFullYear()} Fysi. Todos os direitos reservados.</p>
-          <p>Feito com elegância para vender, clareza para gerenciar.</p>
+          <div className="flex flex-wrap gap-4">
+            <Link href="/politica-de-privacidade" className="hover:text-white/70 transition-colors">
+              Política de Privacidade
+            </Link>
+            <Link href="/termos-de-uso" className="hover:text-white/70 transition-colors">
+              Termos de Uso
+            </Link>
+            <Link href="/termos-de-servico" className="hover:text-white/70 transition-colors">
+              Termos de Serviço
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

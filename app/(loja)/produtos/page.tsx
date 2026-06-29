@@ -6,12 +6,17 @@ import Link from "next/link";
 import { Search, SlidersHorizontal, Eye, RefreshCw, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Peca, Tamanho } from "@/lib/types";
+import { TAMANHOS_LETRA, TAMANHOS_NUMERO } from "@/lib/types";
 
 function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
-const TAMANHOS: Tamanho[] = ["PP", "P", "M", "G", "GG", "XG"];
+// Ordem canônica: letras primeiro, depois numeração crescente
+const ORDEM_TAMANHO: string[] = [
+  ...TAMANHOS_LETRA,
+  ...TAMANHOS_NUMERO,
+];
 
 function CatalogContent() {
   const { pecas } = useStore();
@@ -32,6 +37,20 @@ function CatalogContent() {
   const categories = useMemo(() => {
     const cats = new Set(pecas.filter((p) => p.ativo).map((p) => p.categoria));
     return Array.from(cats);
+  }, [pecas]);
+
+  // Tamanhos únicos presentes nos produtos, na ordem canônica
+  const availableSizes = useMemo(() => {
+    const set = new Set<string>();
+    pecas.filter((p) => p.ativo).forEach((p) =>
+      p.variacoes.forEach((v) => {
+        if (v.quantidadeEstoque > 0) set.add(v.tamanho);
+      })
+    );
+    // Ordena: letras (ordem ORDEM_TAMANHO) depois numeração crescente
+    return ORDEM_TAMANHO.filter((s) => set.has(s)).concat(
+      Array.from(set).filter((s) => !ORDEM_TAMANHO.includes(s)).sort((a, b) => Number(a) - Number(b))
+    );
   }, [pecas]);
 
   // Unique colors list
@@ -211,13 +230,13 @@ function CatalogContent() {
           <div className="space-y-2">
             <h3 className="text-xs uppercase tracking-wider font-semibold text-coal/50">Tamanhos</h3>
             <div className="flex flex-wrap gap-1.5">
-              {TAMANHOS.map((size) => {
-                const isSelected = selectedSizes.includes(size);
+              {availableSizes.map((size) => {
+                const isSelected = selectedSizes.includes(size as Tamanho);
                 return (
                   <button
                     key={size}
-                    onClick={() => toggleSize(size)}
-                    className={`h-9 w-9 rounded-md border text-xs font-semibold transition-all ${
+                    onClick={() => toggleSize(size as Tamanho)}
+                    className={`h-9 min-w-[2.25rem] px-2 rounded-md border text-xs font-semibold transition-all ${
                       isSelected
                         ? "border-ink bg-ink text-white"
                         : "border-ink/10 bg-white text-ink hover:border-ink/20"
@@ -424,13 +443,13 @@ function CatalogContent() {
               <div className="space-y-2">
                 <h3 className="text-xs uppercase tracking-wider font-semibold text-coal/50">Tamanhos</h3>
                 <div className="flex flex-wrap gap-1.5">
-                  {TAMANHOS.map((size) => {
-                    const isSelected = selectedSizes.includes(size);
+                  {availableSizes.map((size) => {
+                    const isSelected = selectedSizes.includes(size as Tamanho);
                     return (
                       <button
                         key={size}
-                        onClick={() => toggleSize(size)}
-                        className={`h-8 w-8 rounded-md border text-xs font-semibold transition-all ${
+                        onClick={() => toggleSize(size as Tamanho)}
+                        className={`h-8 min-w-[2rem] px-2 rounded-md border text-xs font-semibold transition-all ${
                           isSelected
                             ? "border-ink bg-ink text-white"
                             : "border-ink/10 bg-white text-ink"
