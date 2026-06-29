@@ -20,6 +20,8 @@ export default function LojaHeader() {
           <img
             src="/brand/logo-horizontal-preto.png"
             alt="Fysi"
+            width={120}
+            height={28}
             className="h-7 w-auto object-contain"
           />
         </Link>

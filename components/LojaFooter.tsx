@@ -11,6 +11,8 @@ export default function LojaFooter() {
             <img
               src="/brand/logo-horizontal-branco.png"
               alt="Fysi"
+              width={120}
+              height={28}
               className="h-7 w-auto object-contain"
             />
             <p className="max-w-sm text-sm text-white/60 leading-6">
