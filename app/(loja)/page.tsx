@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles, Eye, ShoppingBag, ChevronLeft, ChevronRight } fro
 import { useStore } from "@/lib/store";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import type { Peca } from "@/lib/types";
+import FaqSection from "@/components/FaqSection";
 
 function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -312,6 +313,9 @@ export default function LojaHomePage() {
         </blockquote>
         <div className="h-px bg-gold/30 w-16 mx-auto mt-6" />
       </section>
+
+      {/* FAQ — acima do footer */}
+      <FaqSection />
     </div>
   );
 }
