@@ -33,17 +33,7 @@ export default function LojaFooter() {
             </ul>
           </div>
 
-          <div>
-            <h4 className="text-xs uppercase tracking-[0.2em] font-semibold text-gold mb-4">Administração</h4>
-            <ul className="space-y-2.5 text-sm text-white/60">
-              <li>
-                <Link href="/admin" className="hover:text-white transition-colors">Painel Admin</Link>
-              </li>
-              <li>
-                <Link href="/design" className="hover:text-white transition-colors">Design System</Link>
-              </li>
-            </ul>
-          </div>
+
         </div>
 
         <div className="pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-xs text-white/40">
