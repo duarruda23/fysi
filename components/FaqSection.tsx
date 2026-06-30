@@ -21,8 +21,27 @@ export default function FaqSection() {
 
   if (items.length === 0) return null;
 
+  // JSON-LD estruturado para GEO / AI Overviews / rich results do Google
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.pergunta,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.resposta,
+      },
+    })),
+  };
+
   return (
     <section className="bg-pearl py-16 px-4">
+      {/* Schema.org FAQPage — lido por Google AI Overviews, Perplexity, ChatGPT etc. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="max-w-2xl mx-auto">
         {/* Título */}
         <div className="text-center mb-10">
