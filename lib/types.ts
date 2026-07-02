@@ -31,6 +31,7 @@ export interface Peca {
   detalheTexto?: string;
   envioTexto?: string;
   devolucoesTexto?: string;
+  videoYoutube?: string;
 }
 
 export type StatusPedido = "pendente" | "aprovado" | "recusado";

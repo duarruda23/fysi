@@ -14,6 +14,22 @@ function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 }
 
+/** Extrai o ID do vídeo de qualquer formato de URL do YouTube */
+function getYoutubeId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /youtu\.be\/([^?&\s]+)/,
+    /youtube\.com\/watch\?v=([^&\s]+)/,
+    /youtube\.com\/embed\/([^?&\s]+)/,
+    /youtube\.com\/shorts\/([^?&\s]+)/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 export default function ProductDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { pecas, addToCart, promocoes, inscreverVip, clienteLogado } = useStore();
@@ -278,14 +294,33 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
 
       {/* Image Grid Gallery */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* Large Left Image */}
-        <div className="relative aspect-square overflow-hidden rounded-xl border border-ink/10 bg-linen shadow-sm group">
-          <img
-            src={displayPhotos[0] || "/brand/logo-preto.png"}
-            alt={peca.nome}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
-          />
-        </div>
+        {/* Destaque: vídeo YouTube (se configurado) ou foto principal */}
+        {(() => {
+          const youtubeId = getYoutubeId(peca.videoYoutube ?? "");
+          if (youtubeId) {
+            return (
+              <div className="relative aspect-square overflow-hidden rounded-xl border border-ink/10 bg-ink shadow-sm">
+                <iframe
+                  src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
+                  title={`Vídeo de ${peca.nome}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="absolute inset-0 h-full w-full border-0"
+                  loading="lazy"
+                />
+              </div>
+            );
+          }
+          return (
+            <div className="relative aspect-square overflow-hidden rounded-xl border border-ink/10 bg-linen shadow-sm group">
+              <img
+                src={displayPhotos[0] || "/brand/logo-preto.png"}
+                alt={peca.nome}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
+              />
+            </div>
+          );
+        })()}
         {/* 2x2 Grid of Thumbnails */}
         <div className="grid grid-cols-2 gap-3 aspect-square">
           {displayPhotos.slice(1, 5).map((photo, idx) => (
