@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { Peca } from "@/lib/types";
 
 /* ─────────────────────────────────────────────────────────────
    Componente: formulário de captura de leads
 ───────────────────────────────────────────────────────────── */
 function LeadForm() {
+  const router = useRouter();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   function formatPhone(value: string) {
@@ -33,27 +35,12 @@ function LeadForm() {
       });
       const data = await res.json();
       if (!res.ok) { setStatus("error"); setErrorMsg(data.error); return; }
-      setStatus("success");
+      // Redireciona para a página de obrigado
+      router.push("/lan-jul26-calca/obrigado");
     } catch {
       setStatus("error");
       setErrorMsg("Erro de conexão. Tente novamente.");
     }
-  }
-
-  if (status === "success") {
-    return (
-      <div className="text-center py-6 space-y-3">
-        <div className="w-12 h-12 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center mx-auto">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-        <p className="font-serif text-xl font-semibold text-ink">Você está na lista!</p>
-        <p className="text-sm text-coal/70 leading-relaxed">
-          Entraremos em contato com condições exclusivas antes do lançamento oficial.
-        </p>
-      </div>
-    );
   }
 
   return (

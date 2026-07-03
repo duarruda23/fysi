@@ -24,6 +24,21 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
+    // Dispara webhook em background — não bloqueia a resposta ao usuário
+    fetch("https://webhook.trafegodeloja.com.br/webhook/lancamento-jul26-calca", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        email: email.trim().toLowerCase(),
+        origem: "lan-jul26-calca",
+        criado_em: new Date().toISOString(),
+      }),
+    }).catch(() => {
+      // falha silenciosa — lead já salvo no banco
+    });
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Erro ao salvar. Tente novamente." }, { status: 500 });
