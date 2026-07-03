@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, SlidersHorizontal, Eye, RefreshCw, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Peca, Tamanho } from "@/lib/types";
 import { TAMANHOS_LETRA, TAMANHOS_NUMERO } from "@/lib/types";
+import { trackViewCategoryEvent } from "@/components/AnalyticsScripts";
 
 function currency(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -32,6 +33,15 @@ function CatalogContent() {
 
   // Active Category from search parameters
   const activeCategory = searchParams.get("categoria") || "";
+
+  // Dispara ViewCategory uma vez por montagem (e ao mudar de categoria)
+  const viewCategoryTracked = useRef<string | null>(null);
+  useEffect(() => {
+    if (viewCategoryTracked.current === activeCategory) return;
+    viewCategoryTracked.current = activeCategory;
+    const count = pecas.filter((p) => p.ativo).length;
+    trackViewCategoryEvent(activeCategory, count);
+  }, [activeCategory, pecas]);
 
   // Unique categories list
   const categories = useMemo(() => {

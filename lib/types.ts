@@ -97,6 +97,8 @@ export interface ConfiguracoesLoja {
   googleAnalyticsId: string;
   metaPixelId: string;
   googleAdsId: string;
+  tiktokPixelId: string;
+  tiktokApiToken: string;
   minimoPecasAtacado: number;
   valorMinimoAtacado: number;
 }

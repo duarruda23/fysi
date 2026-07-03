@@ -107,6 +107,8 @@ const defaultConfigs: ConfiguracoesLoja = {
   googleAnalyticsId: "",
   metaPixelId: "",
   googleAdsId: "",
+  tiktokPixelId: "",
+  tiktokApiToken: "",
   minimoPecasAtacado: 12,
   valorMinimoAtacado: 1000,
 };

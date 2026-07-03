@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import Link from "next/link";
 import { Check, ClipboardList, ShoppingBag, ArrowRight } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -19,8 +19,11 @@ export default function ConfirmationPage({ params }: { params: { id: string } })
     return pedidos.find((p) => p.id === params.id);
   }, [pedidos, params.id]);
 
+  // Dispara Purchase uma única vez — useRef evita re-disparo em re-renders
+  const purchaseTracked = useRef(false);
   useEffect(() => {
-    if (pedidoObj) {
+    if (pedidoObj && !purchaseTracked.current) {
+      purchaseTracked.current = true;
       trackPurchaseEvent(pedidoObj.id, pedidoObj.itens, pedidoObj.total);
     }
   }, [pedidoObj]);

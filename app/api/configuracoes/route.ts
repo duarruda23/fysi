@@ -19,6 +19,8 @@ export async function GET() {
     googleAnalyticsId: data.google_analytics_id,
     metaPixelId: data.meta_pixel_id,
     googleAdsId: data.google_ads_id,
+    tiktokPixelId: data.tiktok_pixel_id ?? "",
+    tiktokApiToken: data.tiktok_api_token ?? "",
     minimoPecasAtacado: data.minimo_pecas_atacado,
     valorMinimoAtacado: Number(data.valor_minimo_atacado),
   };
@@ -34,6 +36,8 @@ export async function PUT(request: Request) {
   if (body.googleAnalyticsId !== undefined) updatePayload.google_analytics_id = body.googleAnalyticsId;
   if (body.metaPixelId !== undefined) updatePayload.meta_pixel_id = body.metaPixelId;
   if (body.googleAdsId !== undefined) updatePayload.google_ads_id = body.googleAdsId;
+  if (body.tiktokPixelId !== undefined) updatePayload.tiktok_pixel_id = body.tiktokPixelId;
+  if (body.tiktokApiToken !== undefined) updatePayload.tiktok_api_token = body.tiktokApiToken;
   if (body.minimoPecasAtacado !== undefined) updatePayload.minimo_pecas_atacado = body.minimoPecasAtacado;
   if (body.valorMinimoAtacado !== undefined) updatePayload.valor_minimo_atacado = body.valorMinimoAtacado;
 

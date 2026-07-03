@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ShoppingBag, Check, AlertTriangle, Minus, Plus, Star } from "lucide-react";
 import { useStore } from "@/lib/store";
 import type { Tamanho, VariacaoPeca, Avaliacao } from "@/lib/types";
-import { trackAddToCartEvent } from "@/components/AnalyticsScripts";
+import { trackAddToCartEvent, trackViewContentEvent } from "@/components/AnalyticsScripts";
 import { Avaliacoes } from "@/components/Avaliacoes";
 import FaqSection from "@/components/FaqSection";
 
@@ -37,6 +37,20 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const peca = useMemo(() => {
     return pecas.find((p) => p.id === params.id);
   }, [pecas, params.id]);
+
+  // Flag para disparar ViewContent apenas uma vez por produto
+  const viewTracked = useRef(false);
+  useEffect(() => {
+    if (peca && !viewTracked.current) {
+      viewTracked.current = true;
+      trackViewContentEvent({
+        id: peca.id,
+        name: peca.nome,
+        price: peca.preco,
+        category: peca.categoria,
+      });
+    }
+  }, [peca]);
 
   // States
   const [selectedColor, setSelectedColor] = useState<string | null>(null);

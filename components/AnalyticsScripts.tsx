@@ -16,8 +16,6 @@ declare global {
   }
 }
 
-const TIKTOK_PIXEL_ID = "D940H7JC77UDPAPRGMR0";
-
 export default function AnalyticsScripts() {
   const { configuracoes } = useStore();
   const pathname = usePathname();
@@ -25,6 +23,7 @@ export default function AnalyticsScripts() {
   const gaId = configuracoes.googleAnalyticsId;
   const pixelId = configuracoes.metaPixelId;
   const adsId = configuracoes.googleAdsId;
+  const tiktokPixelId = configuracoes.tiktokPixelId;
 
   // Initialize and Track PageView
   useEffect(() => {
@@ -94,36 +93,104 @@ export default function AnalyticsScripts() {
         />
       )}
 
-      {/* TikTok Pixel Script — carregado após interação para não impactar LCP */}
-      <Script
-        id="tiktok-pixel-script"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            !function(w,d,t){
-              w.TiktokAnalyticsObject=t;
-              var ttq=w[t]=w[t]||[];
-              ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"];
-              ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
-              for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
-              ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
-              ttq.load=function(e,n){
-                var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;
-                ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
-                n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;
-                e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)
-              };
-              ttq.load('${TIKTOK_PIXEL_ID}');
-              ttq.page();
-            }(window,document,'ttq');
-          `,
-        }}
-      />
+      {/* TikTok Pixel Script — carregado apenas quando o Pixel ID estiver configurado */}
+      {tiktokPixelId && (
+        <Script
+          id="tiktok-pixel-script"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(w,d,t){
+                w.TiktokAnalyticsObject=t;
+                var ttq=w[t]=w[t]||[];
+                ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"];
+                ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};
+                for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);
+                ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e};
+                ttq.load=function(e,n){
+                  var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;
+                  ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};
+                  n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;
+                  e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)
+                };
+                ttq.load('${tiktokPixelId}');
+                ttq.page();
+              }(window,document,'ttq');
+            `,
+          }}
+        />
+      )}
     </>
   );
 }
 
 // Global Event Tracking helper functions
+
+export const trackViewContentEvent = (product: {
+  id: string;
+  name: string;
+  price: number;
+  category?: string;
+}) => {
+  if (typeof window === "undefined") return;
+
+  // GA4 — view_item
+  if (window.gtag) {
+    window.gtag("event", "view_item", {
+      currency: "BRL",
+      value: product.price,
+      items: [{ item_id: product.id, item_name: product.name, item_category: product.category, price: product.price }],
+    });
+  }
+  // Meta Pixel — ViewContent
+  if (window.fbq) {
+    window.fbq("track", "ViewContent", {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      value: product.price,
+      currency: "BRL",
+    });
+  }
+  // TikTok — ViewContent
+  if (window.ttq) {
+    window.ttq.track("ViewContent", {
+      content_id: product.id,
+      content_name: product.name,
+      content_type: "product",
+      value: product.price,
+      currency: "BRL",
+    });
+  }
+};
+
+export const trackViewCategoryEvent = (category: string, numProducts: number) => {
+  if (typeof window === "undefined") return;
+
+  // GA4 — view_item_list
+  if (window.gtag) {
+    window.gtag("event", "view_item_list", {
+      item_list_name: category || "Catálogo Geral",
+      item_list_id: category || "catalog",
+      num_items: numProducts,
+    });
+  }
+  // Meta Pixel — ViewContent (categoria)
+  if (window.fbq) {
+    window.fbq("track", "ViewContent", {
+      content_name: category || "Catálogo",
+      content_type: "product_group",
+    });
+  }
+  // TikTok — Browse
+  if (window.ttq) {
+    window.ttq.track("Browse", {
+      content_name: category || "Catálogo",
+      content_type: "product_group",
+    });
+  }
+};
+
 export const trackAddToCartEvent = (item: {
   id: string;
   name: string;
@@ -243,14 +310,18 @@ export const trackPurchaseEvent = (orderId: string, items: any[], totalValue: nu
     });
   }
 
-  // TikTok Pixel Purchase event
+  // TikTok Pixel — CompletePayment (nome correto para Purchase)
   if (window.ttq) {
     window.ttq.track("CompletePayment", {
-      content_ids: items.map((item) => item.pecaId),
-      content_type: "product",
+      contents: items.map((item) => ({
+        content_id: item.pecaId,
+        content_name: item.nomePeca,
+        content_type: "product",
+        quantity: item.quantidade,
+        price: item.precoUnitario,
+      })),
       value: totalValue,
       currency: "BRL",
-      order_id: orderId,
     });
   }
 };
