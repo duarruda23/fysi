@@ -126,6 +126,30 @@ export default function AnalyticsScripts() {
 
 // Global Event Tracking helper functions
 
+export const trackLeadEvent = (params?: { source?: string }) => {
+  if (typeof window === "undefined") return;
+
+  // GA4 — generate_lead
+  if (window.gtag) {
+    window.gtag("event", "generate_lead", {
+      currency: "BRL",
+      source: params?.source ?? "landing",
+    });
+  }
+  // Meta Pixel — Lead
+  if (window.fbq) {
+    window.fbq("track", "Lead", {
+      content_name: params?.source ?? "landing",
+    });
+  }
+  // TikTok — SubmitForm
+  if (window.ttq) {
+    window.ttq.track("SubmitForm", {
+      content_name: params?.source ?? "landing",
+    });
+  }
+};
+
 export const trackViewContentEvent = (product: {
   id: string;
   name: string;
