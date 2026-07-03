@@ -11,6 +11,8 @@ export default function ConfigPage() {
   const [gaId, setGaId] = useState("");
   const [pixelId, setPixelId] = useState("");
   const [adsId, setAdsId] = useState("");
+  const [tiktokPixelId, setTiktokPixelId] = useState("");
+  const [tiktokApiToken, setTiktokApiToken] = useState("");
   const [minPecas, setMinPecas] = useState(12);
   const [minValor, setMinValor] = useState(1000);
   const [saved, setSaved] = useState(false);
@@ -20,6 +22,8 @@ export default function ConfigPage() {
       setGaId(configuracoes.googleAnalyticsId || "");
       setPixelId(configuracoes.metaPixelId || "");
       setAdsId(configuracoes.googleAdsId || "");
+      setTiktokPixelId(configuracoes.tiktokPixelId || "");
+      setTiktokApiToken(configuracoes.tiktokApiToken || "");
       setMinPecas(configuracoes.minimoPecasAtacado ?? 12);
       setMinValor(configuracoes.valorMinimoAtacado ?? 1000);
     }
@@ -31,6 +35,8 @@ export default function ConfigPage() {
       googleAnalyticsId: gaId.trim(),
       metaPixelId: pixelId.trim(),
       googleAdsId: adsId.trim(),
+      tiktokPixelId: tiktokPixelId.trim(),
+      tiktokApiToken: tiktokApiToken.trim(),
       minimoPecasAtacado: Number(minPecas) || 0,
       valorMinimoAtacado: Number(minValor) || 0
     });
@@ -109,6 +115,46 @@ export default function ConfigPage() {
                 className="w-full h-10 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink bg-pearl/10"
               />
               <span className="text-[10px] text-coal/40 block">Tag de conversão do Google Ads (AW-XXXXXX).</span>
+            </div>
+
+            {/* Separador TikTok */}
+            <div className="sm:col-span-2 pt-2 border-t border-ink/8">
+              <div className="flex items-center gap-2 mb-4">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-ink/60 shrink-0" aria-hidden="true">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+                </svg>
+                <span className="text-xs font-semibold uppercase tracking-wider text-coal/60">TikTok for Business</span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label htmlFor="tiktokPixelId" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                    TikTok Pixel ID
+                  </label>
+                  <input
+                    type="text"
+                    id="tiktokPixelId"
+                    value={tiktokPixelId}
+                    onChange={(e) => setTiktokPixelId(e.target.value)}
+                    placeholder="Ex: D940H7JC77UDPAPRGMR0"
+                    className="w-full h-10 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink bg-pearl/10"
+                  />
+                  <span className="text-[10px] text-coal/40 block">ID do pixel do TikTok Ads (Events Manager).</span>
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="tiktokApiToken" className="text-xs font-semibold uppercase tracking-wider text-coal/60 block">
+                    TikTok Events API Token
+                  </label>
+                  <input
+                    type="password"
+                    id="tiktokApiToken"
+                    value={tiktokApiToken}
+                    onChange={(e) => setTiktokApiToken(e.target.value)}
+                    placeholder="Token de acesso da API de eventos"
+                    className="w-full h-10 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink bg-pearl/10"
+                  />
+                  <span className="text-[10px] text-coal/40 block">Token para envio server-side via Events API (opcional).</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
