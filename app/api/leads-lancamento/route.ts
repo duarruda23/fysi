@@ -24,20 +24,27 @@ export async function POST(req: Request) {
 
     if (error) throw error;
 
-    // Dispara webhook em background — não bloqueia a resposta ao usuário
-    fetch("https://webhook.trafegodeloja.com.br/webhook/lancamento-jul26-calca", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome: nome.trim(),
-        telefone: telefone.trim(),
-        email: email.trim().toLowerCase(),
-        origem: "lan-jul26-calca",
-        criado_em: new Date().toISOString(),
-      }),
-    }).catch(() => {
-      // falha silenciosa — lead já salvo no banco
-    });
+    // Envia webhook aguardando a resposta com timeout de 8s
+    // Em serverless o processo encerra junto com o return — sem await o webhook nunca chega
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      await fetch("https://webhook.trafegodeloja.com.br/webhook/lancamento-jul26-calca", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          nome: nome.trim(),
+          telefone: telefone.trim(),
+          email: email.trim().toLowerCase(),
+          origem: "lan-jul26-calca",
+          criado_em: new Date().toISOString(),
+        }),
+      });
+      clearTimeout(timeoutId);
+    } catch {
+      // falha silenciosa — lead já salvo no banco, webhook pode ser reprocessado pelo n8n
+    }
 
     return NextResponse.json({ ok: true });
   } catch {
