@@ -46,7 +46,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
       trackViewContentEvent({
         id: peca.id,
         name: peca.nome,
-        price: peca.precoAtacado,
+        price: peca.preco,
         category: peca.categoria,
       });
     }
