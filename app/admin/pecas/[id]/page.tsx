@@ -39,6 +39,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [envioTexto, setEnvioTexto] = useState("");
   const [devolucoesTexto, setDevolucoesTexto] = useState("");
   const [fotos, setFotos] = useState<string[]>([""]);
+  const [videoYoutube, setVideoYoutube] = useState("");
   const [ativo, setAtivo] = useState(true);
 
   // Variations States
@@ -63,6 +64,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setDescricao(pecaToEdit.descricao ?? "");
       setPreco(pecaToEdit.preco ?? 0);
       setFotos(pecaToEdit.fotos?.length ? pecaToEdit.fotos : [""]);
+      setVideoYoutube(pecaToEdit.videoYoutube ?? "");
       setAtivo(pecaToEdit.ativo ?? true);
       setVariacoes(Array.isArray(pecaToEdit.variacoes) ? pecaToEdit.variacoes : []);
       setBullets(pecaToEdit.bullets?.length ? pecaToEdit.bullets : [""]);
@@ -160,6 +162,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         preco,
         descricao,
         fotos: fotosFinais,
+        videoYoutube: videoYoutube.trim() || "",
         ativo,
         variacoes,
         bullets: bullets.map(b => b.trim()).filter(b => b !== ""),
@@ -466,6 +469,31 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
             >
               <Plus size={13} /> Adicionar outra foto
             </button>
+
+            {/* Vídeo YouTube de destaque */}
+            <div className="pt-2 border-t border-ink/8 space-y-2">
+              <div className="flex items-center gap-2">
+                <svg className="text-[#FF0000] shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <label htmlFor="videoYoutube" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                  Vídeo de Destaque (YouTube)
+                </label>
+              </div>
+              <input
+                type="url"
+                id="videoYoutube"
+                value={videoYoutube}
+                onChange={(e) => setVideoYoutube(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..."
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none placeholder:text-coal/30"
+              />
+              {videoYoutube.trim() && (
+                <p className="text-[11px] text-gold/80 font-medium">
+                  Vídeo configurado — aparecerá como destaque na galeria do produto.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Ativo Status Toggle */}
