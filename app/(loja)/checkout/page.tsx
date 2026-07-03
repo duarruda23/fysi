@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
@@ -108,12 +108,15 @@ export default function CheckoutPage() {
     }
   }, [carrinho, regrasAtacadoValidas, router]);
 
-  // Track InitiateCheckout on mount
+  // Track InitiateCheckout uma única vez ao entrar na página
+  const checkoutTracked = useRef(false);
   useEffect(() => {
-    if (carrinho.length > 0 && regrasAtacadoValidas) {
+    if (carrinho.length > 0 && regrasAtacadoValidas && !checkoutTracked.current) {
+      checkoutTracked.current = true;
       trackInitiateCheckoutEvent(carrinho, subtotal);
     }
-  }, [carrinho, subtotal, regrasAtacadoValidas]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // array vazio — dispara só na montagem
 
   // Calculate totals
 

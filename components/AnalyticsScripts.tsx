@@ -125,6 +125,72 @@ export default function AnalyticsScripts() {
 }
 
 // Global Event Tracking helper functions
+
+export const trackViewContentEvent = (product: {
+  id: string;
+  name: string;
+  price: number;
+  category?: string;
+}) => {
+  if (typeof window === "undefined") return;
+
+  // GA4 — view_item
+  if (window.gtag) {
+    window.gtag("event", "view_item", {
+      currency: "BRL",
+      value: product.price,
+      items: [{ item_id: product.id, item_name: product.name, item_category: product.category, price: product.price }],
+    });
+  }
+  // Meta Pixel — ViewContent
+  if (window.fbq) {
+    window.fbq("track", "ViewContent", {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      value: product.price,
+      currency: "BRL",
+    });
+  }
+  // TikTok — ViewContent
+  if (window.ttq) {
+    window.ttq.track("ViewContent", {
+      content_id: product.id,
+      content_name: product.name,
+      content_type: "product",
+      value: product.price,
+      currency: "BRL",
+    });
+  }
+};
+
+export const trackViewCategoryEvent = (category: string, numProducts: number) => {
+  if (typeof window === "undefined") return;
+
+  // GA4 — view_item_list
+  if (window.gtag) {
+    window.gtag("event", "view_item_list", {
+      item_list_name: category || "Catálogo Geral",
+      item_list_id: category || "catalog",
+      num_items: numProducts,
+    });
+  }
+  // Meta Pixel — ViewContent (categoria)
+  if (window.fbq) {
+    window.fbq("track", "ViewContent", {
+      content_name: category || "Catálogo",
+      content_type: "product_group",
+    });
+  }
+  // TikTok — Browse
+  if (window.ttq) {
+    window.ttq.track("Browse", {
+      content_name: category || "Catálogo",
+      content_type: "product_group",
+    });
+  }
+};
+
 export const trackAddToCartEvent = (item: {
   id: string;
   name: string;
@@ -244,14 +310,18 @@ export const trackPurchaseEvent = (orderId: string, items: any[], totalValue: nu
     });
   }
 
-  // TikTok Pixel Purchase event
+  // TikTok Pixel — CompletePayment (nome correto para Purchase)
   if (window.ttq) {
     window.ttq.track("CompletePayment", {
-      content_ids: items.map((item) => item.pecaId),
-      content_type: "product",
+      contents: items.map((item) => ({
+        content_id: item.pecaId,
+        content_name: item.nomePeca,
+        content_type: "product",
+        quantity: item.quantidade,
+        price: item.precoUnitario,
+      })),
       value: totalValue,
       currency: "BRL",
-      order_id: orderId,
     });
   }
 };
