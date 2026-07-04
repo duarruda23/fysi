@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Peca } from "@/lib/types";
+import { trackLeadEvent } from "@/components/AnalyticsScripts";
 
 /* ─────────────────────────────────────────────────────────────
    Componente: formulário de captura de leads
@@ -35,6 +36,8 @@ function LeadForm() {
       });
       const data = await res.json();
       if (!res.ok) { setStatus("error"); setErrorMsg(data.error); return; }
+      // Dispara eventos de Lead para GA4, Meta Pixel e TikTok Ads
+      trackLeadEvent({ source: "lan-jul26-calca" });
       // Redireciona para a página de obrigado
       router.push("/lan-jul26-calca/obrigado");
     } catch {
