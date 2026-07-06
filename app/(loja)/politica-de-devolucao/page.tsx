@@ -1,6 +1,4 @@
 import Link from "next/link";
-import LojaHeader from "@/components/LojaHeader";
-import LojaFooter from "@/components/LojaFooter";
 
 export const metadata = {
   title: "Política de Devolução | Fysi",
@@ -9,9 +7,7 @@ export const metadata = {
 
 export default function PoliticaDeDevolucaoPage() {
   return (
-    <>
-      <LojaHeader />
-      <main className="min-h-screen bg-[#f8f5ef]">
+    <main className="min-h-screen bg-[#f8f5ef]">
         {/* Hero */}
         <section className="border-b border-[#11100e]/8 bg-[#11100e] py-16 px-5">
           <div className="mx-auto max-w-3xl">
@@ -172,9 +168,7 @@ export default function PoliticaDeDevolucaoPage() {
             </div>
           </div>
         </section>
-      </main>
-      <LojaFooter />
-    </>
+    </main>
   );
 }
 
