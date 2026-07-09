@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 // ⚠️ TROQUE este link pelo link real do grupo do WhatsApp antes do lançamento
-const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/COLE_O_LINK_AQUI";
+const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/CxpLJKNJkmJLKqc3nk8sFy?mode=gi_t";
 
 export default function ObrigadoPage() {
   return (
