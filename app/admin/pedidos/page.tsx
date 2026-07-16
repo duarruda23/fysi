@@ -115,15 +115,20 @@ function PedidoAvulsoModal({ pecas, onClose, onSuccess }: PedidoAvulsoModalProps
   }
 
   // ── Desconto ──────────────────────────────────────────────────────────────
+  const [tipoDesconto, setTipoDesconto] = useState<"%" | "R$">("%");
   const [desconto, setDesconto] = useState("");
-  const descontoNum = Math.min(100, Math.max(0, parseFloat(desconto) || 0));
 
   // ── Status inicial ────────────────────────────────────────────────────────
   const [statusInicial, setStatusInicial] = useState<"pendente" | "aprovado">("aprovado");
 
   // ── Cálculos ──────────────────────────────────────────────────────────────
   const subtotal = itens.reduce((s, i) => s + i.precoUnitario * i.quantidade, 0);
-  const totalFinal = subtotal * (1 - descontoNum / 100);
+  const descontoValor = (() => {
+    const n = Math.max(0, parseFloat(desconto) || 0);
+    if (tipoDesconto === "%") return subtotal * (Math.min(100, n) / 100);
+    return Math.min(subtotal, n);
+  })();
+  const totalFinal = Math.max(0, subtotal - descontoValor);
 
   // ── Submissão ─────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
@@ -131,8 +136,8 @@ function PedidoAvulsoModal({ pecas, onClose, onSuccess }: PedidoAvulsoModalProps
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!clienteNome.trim() || !clienteTelefone.trim()) {
-      setError("Nome e telefone do cliente são obrigatórios.");
+    if (!clienteNome.trim()) {
+      setError("O nome do cliente é obrigatório.");
       return;
     }
     if (itens.length === 0) {
@@ -144,9 +149,14 @@ function PedidoAvulsoModal({ pecas, onClose, onSuccess }: PedidoAvulsoModalProps
     try {
       const payload = {
         avulso: true,
-        cliente: { nome: clienteNome.trim(), telefone: clienteTelefone.trim(), email: clienteEmail.trim() },
+        cliente: {
+          nome: clienteNome.trim(),
+          telefone: clienteTelefone.trim() || "—",
+          email: clienteEmail.trim(),
+        },
         itens: itens.map(({ key: _k, ...rest }) => rest) as ItemPedido[],
-        descontoPercentual: descontoNum || undefined,
+        // Envia o desconto já calculado em R$ para a API não recalcular
+        descontoMonetario: descontoValor > 0 ? descontoValor : undefined,
         statusInicial,
       };
       const res = await fetch("/api/pedidos", {
@@ -351,17 +361,41 @@ function PedidoAvulsoModal({ pecas, onClose, onSuccess }: PedidoAvulsoModalProps
             <p className="text-xs font-semibold uppercase tracking-wider text-coal/50">Condições</p>
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs text-coal/55 block">Desconto (%)</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={desconto}
-                  onChange={(e) => setDesconto(e.target.value)}
-                  placeholder="0"
-                  className="w-full h-9 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink"
-                />
-                <p className="text-[10px] text-coal/40">Sem restrições — aplique o valor que desejar.</p>
+                <label className="text-xs text-coal/55 block">Desconto</label>
+                <div className="flex gap-1.5">
+                  {/* Toggle % / R$ */}
+                  <div className="flex rounded-md border border-ink/10 overflow-hidden shrink-0">
+                    {(["%" , "R$"] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setTipoDesconto(t)}
+                        className={`px-2.5 h-9 text-xs font-semibold transition-colors ${
+                          tipoDesconto === t
+                            ? "bg-ink text-white"
+                            : "bg-white text-coal/55 hover:bg-pearl/40"
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={tipoDesconto === "%" ? 100 : undefined}
+                    step={tipoDesconto === "%" ? 1 : 0.01}
+                    value={desconto}
+                    onChange={(e) => setDesconto(e.target.value)}
+                    placeholder={tipoDesconto === "%" ? "Ex: 10" : "Ex: 25,00"}
+                    className="w-full h-9 px-3 rounded-md border border-ink/10 text-sm text-ink outline-none focus:border-ink"
+                  />
+                </div>
+                {descontoValor > 0 && (
+                  <p className="text-[10px] text-emerald-600 font-medium">
+                    Desconto de {currency(descontoValor)} aplicado.
+                  </p>
+                )}
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-coal/55 block">Status inicial</label>
@@ -391,14 +425,14 @@ function PedidoAvulsoModal({ pecas, onClose, onSuccess }: PedidoAvulsoModalProps
           <div className="px-6 py-5 bg-pearl/20">
             <div className="flex items-center justify-between mb-4">
               <div className="space-y-0.5">
-                {descontoNum > 0 && (
+                {descontoValor > 0 && (
                   <p className="text-xs text-coal/50 line-through">{currency(subtotal)}</p>
                 )}
                 <p className="text-lg font-bold text-ink font-serif">
                   Total: {currency(totalFinal)}
-                  {descontoNum > 0 && (
+                  {descontoValor > 0 && (
                     <span className="ml-2 text-xs font-sans font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                      -{descontoNum}% OFF
+                      -{tipoDesconto === "%" ? `${parseFloat(desconto) || 0}%` : currency(descontoValor)} OFF
                     </span>
                   )}
                 </p>

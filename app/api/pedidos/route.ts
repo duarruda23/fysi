@@ -85,9 +85,13 @@ export async function POST(request: Request) {
       sum + item.quantidade * item.precoUnitario,
     0
   );
-  const desconto = body.descontoPercentual
-    ? subtotal * (body.descontoPercentual / 100)
-    : 0;
+  // Aceita desconto em valor monetário (avulso) ou percentual (fluxo normal)
+  let desconto = 0;
+  if (body.descontoMonetario != null) {
+    desconto = Math.min(subtotal, Math.max(0, Number(body.descontoMonetario)));
+  } else if (body.descontoPercentual) {
+    desconto = subtotal * (body.descontoPercentual / 100);
+  }
   const total = Math.max(0, subtotal - desconto);
 
   // Pedido avulso pode ter status inicial customizado (aprovado ou pendente)
