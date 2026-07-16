@@ -19,16 +19,32 @@ export async function GET() {
     // Busca todos os pedidos de uma vez (mais eficiente que N+1)
     const { data: pedidos } = await supabase
       .from("pedidos")
-      .select("cliente_id, total, status, criado_em");
+      .select("cliente_id, cliente_telefone, total, status, criado_em");
 
-    const pedidosPorCliente: Record<string, typeof pedidos> = {};
+    // Índice por cliente_id (pedidos normais)
+    const pedidosPorCliente: Record<string, any[]> = {};
+    // Índice por telefone normalizado (pedidos avulsos sem cliente_id)
+    const pedidosPorTelefone: Record<string, any[]> = {};
+
     for (const p of pedidos || []) {
-      if (!pedidosPorCliente[p.cliente_id]) pedidosPorCliente[p.cliente_id] = [];
-      pedidosPorCliente[p.cliente_id]!.push(p);
+      if (p.cliente_id) {
+        if (!pedidosPorCliente[p.cliente_id]) pedidosPorCliente[p.cliente_id] = [];
+        pedidosPorCliente[p.cliente_id].push(p);
+      } else if (p.cliente_telefone) {
+        // Pedido avulso: normaliza telefone (só dígitos) para fazer o match
+        const tel = String(p.cliente_telefone).replace(/\D/g, "");
+        if (!pedidosPorTelefone[tel]) pedidosPorTelefone[tel] = [];
+        pedidosPorTelefone[tel].push(p);
+      }
     }
 
     const clientesEnriquecidos = (clientes || []).map((c: any) => {
-      const todosPedidos = pedidosPorCliente[c.id] || [];
+      const telNorm = String(c.telefone ?? "").replace(/\D/g, "");
+      // Une pedidos vinculados por ID + pedidos avulsos vinculados por telefone
+      const todosPedidos = [
+        ...(pedidosPorCliente[c.id] || []),
+        ...(pedidosPorTelefone[telNorm] || []),
+      ];
       const pedidosAprovados = todosPedidos.filter((p: any) => p.status === "aprovado");
       const totalReal = pedidosAprovados.reduce((sum: number, p: any) => sum + Number(p.total), 0);
       const ultimoPedido = todosPedidos.sort((a: any, b: any) =>
