@@ -90,6 +90,11 @@ export async function POST(request: Request) {
     : 0;
   const total = Math.max(0, subtotal - desconto);
 
+  // Pedido avulso pode ter status inicial customizado (aprovado ou pendente)
+  const statusInicial = body.avulso && body.statusInicial === "aprovado"
+    ? "aprovado"
+    : "pendente";
+
   const { error: pedidoError } = await supabase.from("pedidos").insert({
     id,
     numero: nextNumero,
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
     cliente_endereco: body.cliente.endereco ?? null,
     cliente_id: body.cliente.clienteId ?? null,
     total,
-    status: "pendente",
+    status: statusInicial,
   });
 
   if (pedidoError) {
