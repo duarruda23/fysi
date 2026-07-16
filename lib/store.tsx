@@ -63,6 +63,7 @@ interface StoreContextProps {
     status: "aprovado" | "recusado",
     motivoRecusa?: string
   ) => Promise<void>;
+  refetchPedidos: () => Promise<void>;
 
   // Carrinho Actions
   addToCart: (peca: Peca, variacaoId: string, quantidade: number) => void;
@@ -336,6 +337,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   // ── Pedidos ────────────────────────────────────────────────────────────────
+
+  const refetchPedidos = useCallback(async () => {
+    try {
+      const data = await apiFetch<Pedido[]>("/api/pedidos");
+      setPedidos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("[Store] Erro ao rebuscar pedidos:", err);
+    }
+  }, []);
 
   const addPedido = async (
     cliente: ClientePedidoInput,
@@ -644,6 +654,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         refetchPecas,
         addPedido,
         responderPedido,
+        refetchPedidos,
         addToCart,
         removeFromCart,
         updateCartQuantity,
