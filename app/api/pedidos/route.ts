@@ -134,6 +134,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: itensError.message }, { status: 500 });
   }
 
+  // Pedido avulso já aprovado na criação — debitar estoque imediatamente
+  if (statusInicial === "aprovado") {
+    for (const item of body.itens as ItemPedido[]) {
+      const { data: varRow } = await supabase
+        .from("variacoes_peca")
+        .select("quantidade_estoque")
+        .eq("id", item.variacaoId)
+        .single();
+
+      if (varRow) {
+        const novoEstoque = Math.max(
+          0,
+          varRow.quantidade_estoque - item.quantidade
+        );
+        await supabase
+          .from("variacoes_peca")
+          .update({ quantidade_estoque: novoEstoque })
+          .eq("id", item.variacaoId);
+      }
+    }
+  }
+
   // Disparar webhook de novo pedido (fire-and-forget)
   dispatchWebhook("novo_pedido", {
     pedidoId: id,
