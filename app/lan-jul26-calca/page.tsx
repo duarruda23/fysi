@@ -149,7 +149,7 @@ function CtaFinal() {
             Garantir acesso antecipado
           </button>
           <a
-            href="https://wa.me/5500000000000?text=Olá! Vi o lançamento da Fysi e quero saber mais."
+            href="https://wa.me/5581973307057?text=Olá! Vi o lançamento da Fysi e quero saber mais."
             target="_blank"
             rel="noopener noreferrer"
             className="h-12 px-8 rounded-lg border border-white/20 text-white font-semibold text-sm tracking-wide hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
@@ -158,7 +158,10 @@ function CtaFinal() {
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.107.552 4.083 1.518 5.797L0 24l6.335-1.502A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.372l-.36-.214-3.727.884.939-3.638-.234-.373A9.818 9.818 0 1112 21.818z"/>
             </svg>
-            Falar no WhatsApp
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="text-xs opacity-80">+55 81 7330-7057</span>
+              <span>Falar no WhatsApp</span>
+            </div>
           </a>
         </div>
 
@@ -199,18 +202,18 @@ export default function LandingPage() {
       {/* ── SESSÃO 1: HERO ───────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center overflow-hidden bg-ink">
 
-        {/* Imagem de fundo — desktop: sobreposição lateral direita */}
+        {/* Imagem de fundo — desktop: ocupa lado direito mostrando o leque de calças */}
         <div className="absolute inset-0 hidden md:block">
           <img
             src="/landing/calca-hero.png"
             alt=""
             aria-hidden="true"
-            className="absolute right-0 top-0 h-full w-[60%] object-cover object-left"
+            className="absolute right-0 top-0 h-full w-[58%] object-cover object-center"
             fetchPriority="high"
             decoding="sync"
           />
-          {/* degradê da esquerda cobrindo a imagem */}
-          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-transparent" />
+          {/* degradê cobrindo da esquerda para fundir com o fundo escuro */}
+          <div className="absolute inset-0 bg-gradient-to-r from-ink from-30% via-ink/80 via-45% to-transparent" />
         </div>
 
         {/* Imagem — mobile: acima do H1 com degradê embaixo */}
