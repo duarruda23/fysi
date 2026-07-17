@@ -149,7 +149,7 @@ function CtaFinal() {
             Garantir acesso antecipado
           </button>
           <a
-            href="https://wa.me/5500000000000?text=Olá! Vi o lançamento da Fysi e quero saber mais."
+            href="https://wa.me/5581973307057?text=Olá! Vi o lançamento da Fysi e quero saber mais."
             target="_blank"
             rel="noopener noreferrer"
             className="h-12 px-8 rounded-lg border border-white/20 text-white font-semibold text-sm tracking-wide hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
