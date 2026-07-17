@@ -199,18 +199,18 @@ export default function LandingPage() {
       {/* ── SESSÃO 1: HERO ───────────────────────────────────── */}
       <section className="relative min-h-screen flex items-center overflow-hidden bg-ink">
 
-        {/* Imagem de fundo — desktop: sobreposição lateral direita */}
+        {/* Imagem de fundo — desktop: ocupa lado direito mostrando o leque de calças */}
         <div className="absolute inset-0 hidden md:block">
           <img
             src="/landing/calca-hero.png"
             alt=""
             aria-hidden="true"
-            className="absolute right-0 top-0 h-full w-[60%] object-cover object-left"
+            className="absolute right-0 top-0 h-full w-[58%] object-cover object-center"
             fetchPriority="high"
             decoding="sync"
           />
-          {/* degradê da esquerda cobrindo a imagem */}
-          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-transparent" />
+          {/* degradê cobrindo da esquerda para fundir com o fundo escuro */}
+          <div className="absolute inset-0 bg-gradient-to-r from-ink from-30% via-ink/80 via-45% to-transparent" />
         </div>
 
         {/* Imagem — mobile: acima do H1 com degradê embaixo */}
