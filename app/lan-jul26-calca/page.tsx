@@ -159,7 +159,7 @@ function CtaFinal() {
               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.107.552 4.083 1.518 5.797L0 24l6.335-1.502A11.95 11.95 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.372l-.36-.214-3.727.884.939-3.638-.234-.373A9.818 9.818 0 1112 21.818z"/>
             </svg>
             <div className="flex flex-col items-start gap-0.5">
-              <span className="text-xs opacity-80">+55 81 7330-7057</span>
+              <span className="text-xs opacity-80">Entre no grupo VIP</span>
               <span>Falar no WhatsApp</span>
             </div>
           </a>
