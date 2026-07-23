@@ -20,6 +20,37 @@ export async function GET(request: Request) {
   const BASE_URL = origin;
   const BRAND = "Fysi";
 
+  // Frete para todos os países configurados no Merchant Center
+  // Preço 0 = frete calculado no checkout (aceito pelo Google)
+  const SHIPPING = `
+      <g:shipping>
+        <g:country>BR</g:country>
+        <g:service>Padrão</g:service>
+        <g:price>0.00 BRL</g:price>
+      </g:shipping>
+      <g:shipping>
+        <g:country>US</g:country>
+        <g:service>Standard</g:service>
+        <g:price>0.00 USD</g:price>
+      </g:shipping>
+      <g:shipping>
+        <g:country>PT</g:country>
+        <g:service>Standard</g:service>
+        <g:price>0.00 EUR</g:price>
+      </g:shipping>`;
+
+  // Atributos obrigatórios para vestuário adulto (categoria 1604)
+  // peso recebe o valor real da peça em kg
+  const apparelAttrs = (pesoGramas: number) => `
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+      <g:shipping_weight>${((pesoGramas ?? 380) / 1000).toFixed(3)} kg</g:shipping_weight>`;
+
+  // Exclui listagens locais (sem loja física) para remover o aviso do Merchant Center
+  const EXCLUDED_DESTINATIONS = `
+      <g:excluded_destination>free_local_listings</g:excluded_destination>
+      <g:excluded_destination>local_inventory_ads</g:excluded_destination>`;
+
   const { data: pecasRows, error: pecasError } = await supabase
     .from("pecas")
     .select("*")
@@ -77,7 +108,7 @@ export async function GET(request: Request) {
       <g:brand>${BRAND}</g:brand>
       <g:condition>new</g:condition>
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
-      <g:google_product_category>1604</g:google_product_category>
+      <g:google_product_category>1604</g:google_product_category>${apparelAttrs(peca.peso_gramas ?? 380)}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
       continue;
     }
@@ -104,7 +135,7 @@ export async function GET(request: Request) {
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
       <g:google_product_category>1604</g:google_product_category>
       <g:color>${xmlEscape(v.cor)}</g:color>
-      <g:size>${xmlEscape(v.tamanho)}</g:size>
+      <g:size>${xmlEscape(v.tamanho)}</g:size>${apparelAttrs(peca.peso_gramas ?? 380)}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
     }
   }

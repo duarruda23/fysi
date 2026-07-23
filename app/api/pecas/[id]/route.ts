@@ -24,6 +24,7 @@ export async function PUT(
   if (pecaData.envioTexto !== undefined) updatePayload.envio_texto = pecaData.envioTexto;
   if (pecaData.devolucoesTexto !== undefined) updatePayload.devolucoes_texto = pecaData.devolucoesTexto;
   if (pecaData.videoYoutube !== undefined) updatePayload.video_youtube = pecaData.videoYoutube || null;
+  if (pecaData.pesoGramas !== undefined) updatePayload.peso_gramas = pecaData.pesoGramas;
 
   if (Object.keys(updatePayload).length > 0) {
     const { error } = await supabase
