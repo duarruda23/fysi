@@ -20,6 +20,20 @@ export async function GET(request: Request) {
   const BASE_URL = origin;
   const BRAND = "Fysi";
 
+  // Bloco de frete padrão: Brasil, frete a combinar (0.00 BRL)
+  // O Merchant Center aceita preço 0 quando o frete é calculado no checkout
+  const SHIPPING_BR = `
+      <g:shipping>
+        <g:country>BR</g:country>
+        <g:service>Padrão</g:service>
+        <g:price>0.00 BRL</g:price>
+      </g:shipping>`;
+
+  // Exclui listagens locais (sem loja física) para remover o aviso do Merchant Center
+  const EXCLUDED_DESTINATIONS = `
+      <g:excluded_destination>free_local_listings</g:excluded_destination>
+      <g:excluded_destination>local_inventory_ads</g:excluded_destination>`;
+
   const { data: pecasRows, error: pecasError } = await supabase
     .from("pecas")
     .select("*")
@@ -77,7 +91,7 @@ export async function GET(request: Request) {
       <g:brand>${BRAND}</g:brand>
       <g:condition>new</g:condition>
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
-      <g:google_product_category>1604</g:google_product_category>
+      <g:google_product_category>1604</g:google_product_category>${SHIPPING_BR}${EXCLUDED_DESTINATIONS}
     </item>`;
       continue;
     }
@@ -104,7 +118,7 @@ export async function GET(request: Request) {
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
       <g:google_product_category>1604</g:google_product_category>
       <g:color>${xmlEscape(v.cor)}</g:color>
-      <g:size>${xmlEscape(v.tamanho)}</g:size>
+      <g:size>${xmlEscape(v.tamanho)}</g:size>${SHIPPING_BR}${EXCLUDED_DESTINATIONS}
     </item>`;
     }
   }
