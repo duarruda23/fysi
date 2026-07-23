@@ -20,14 +20,30 @@ export async function GET(request: Request) {
   const BASE_URL = origin;
   const BRAND = "Fysi";
 
-  // Bloco de frete padrão: Brasil, frete a combinar (0.00 BRL)
-  // O Merchant Center aceita preço 0 quando o frete é calculado no checkout
-  const SHIPPING_BR = `
+  // Frete para todos os países configurados no Merchant Center
+  // Preço 0 = frete calculado no checkout (aceito pelo Google)
+  const SHIPPING = `
       <g:shipping>
         <g:country>BR</g:country>
         <g:service>Padrão</g:service>
         <g:price>0.00 BRL</g:price>
+      </g:shipping>
+      <g:shipping>
+        <g:country>US</g:country>
+        <g:service>Standard</g:service>
+        <g:price>0.00 USD</g:price>
+      </g:shipping>
+      <g:shipping>
+        <g:country>PT</g:country>
+        <g:service>Standard</g:service>
+        <g:price>0.00 EUR</g:price>
       </g:shipping>`;
+
+  // Atributos obrigatórios para vestuário adulto (categoria 1604)
+  const APPAREL_ATTRS = `
+      <g:gender>unisex</g:gender>
+      <g:age_group>adult</g:age_group>
+      <g:shipping_weight>0.5 kg</g:shipping_weight>`;
 
   // Exclui listagens locais (sem loja física) para remover o aviso do Merchant Center
   const EXCLUDED_DESTINATIONS = `
@@ -91,7 +107,7 @@ export async function GET(request: Request) {
       <g:brand>${BRAND}</g:brand>
       <g:condition>new</g:condition>
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
-      <g:google_product_category>1604</g:google_product_category>${SHIPPING_BR}${EXCLUDED_DESTINATIONS}
+      <g:google_product_category>1604</g:google_product_category>${APPAREL_ATTRS}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
       continue;
     }
@@ -118,7 +134,7 @@ export async function GET(request: Request) {
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
       <g:google_product_category>1604</g:google_product_category>
       <g:color>${xmlEscape(v.cor)}</g:color>
-      <g:size>${xmlEscape(v.tamanho)}</g:size>${SHIPPING_BR}${EXCLUDED_DESTINATIONS}
+      <g:size>${xmlEscape(v.tamanho)}</g:size>${APPAREL_ATTRS}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
     }
   }
