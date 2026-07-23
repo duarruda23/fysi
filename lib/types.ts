@@ -22,6 +22,7 @@ export interface Peca {
   descricao: string;
   categoria: string;
   preco: number;
+  pesoGramas?: number;
   fotos: string[];
   variacoes: VariacaoPeca[];
   ativo: boolean;

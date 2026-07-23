@@ -40,10 +40,11 @@ export async function GET(request: Request) {
       </g:shipping>`;
 
   // Atributos obrigatórios para vestuário adulto (categoria 1604)
-  const APPAREL_ATTRS = `
+  // peso recebe o valor real da peça em kg
+  const apparelAttrs = (pesoGramas: number) => `
       <g:gender>unisex</g:gender>
       <g:age_group>adult</g:age_group>
-      <g:shipping_weight>0.5 kg</g:shipping_weight>`;
+      <g:shipping_weight>${((pesoGramas ?? 380) / 1000).toFixed(3)} kg</g:shipping_weight>`;
 
   // Exclui listagens locais (sem loja física) para remover o aviso do Merchant Center
   const EXCLUDED_DESTINATIONS = `
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
       <g:brand>${BRAND}</g:brand>
       <g:condition>new</g:condition>
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
-      <g:google_product_category>1604</g:google_product_category>${APPAREL_ATTRS}${SHIPPING}${EXCLUDED_DESTINATIONS}
+      <g:google_product_category>1604</g:google_product_category>${apparelAttrs(peca.peso_gramas ?? 380)}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
       continue;
     }
@@ -134,7 +135,7 @@ export async function GET(request: Request) {
       <g:product_type>${xmlEscape(peca.categoria)}</g:product_type>
       <g:google_product_category>1604</g:google_product_category>
       <g:color>${xmlEscape(v.cor)}</g:color>
-      <g:size>${xmlEscape(v.tamanho)}</g:size>${APPAREL_ATTRS}${SHIPPING}${EXCLUDED_DESTINATIONS}
+      <g:size>${xmlEscape(v.tamanho)}</g:size>${apparelAttrs(peca.peso_gramas ?? 380)}${SHIPPING}${EXCLUDED_DESTINATIONS}
     </item>`;
     }
   }

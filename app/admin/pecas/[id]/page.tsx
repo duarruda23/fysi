@@ -33,6 +33,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [novaCategoria, setNovaCategoria] = useState("");
   const [useCustomCategory, setUseCustomCategory] = useState(false);
   const [preco, setPreco] = useState<number>(0);
+  const [pesoGramas, setPesoGramas] = useState<number>(380);
   const [descricao, setDescricao] = useState("");
   const [bullets, setBullets] = useState<string[]>([""]);
   const [detalheTexto, setDetalheTexto] = useState("");
@@ -63,6 +64,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setReferencia(pecaToEdit.referencia ?? "");
       setDescricao(pecaToEdit.descricao ?? "");
       setPreco(pecaToEdit.preco ?? 0);
+      setPesoGramas(pecaToEdit.pesoGramas ?? 380);
       setFotos(pecaToEdit.fotos?.length ? pecaToEdit.fotos : [""]);
       setVideoYoutube(pecaToEdit.videoYoutube ?? "");
       setAtivo(pecaToEdit.ativo ?? true);
@@ -160,6 +162,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         referencia,
         categoria: finalCat,
         preco,
+        pesoGramas,
         descricao,
         fotos: fotosFinais,
         videoYoutube: videoYoutube.trim() || "",
@@ -271,6 +274,24 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
                 }`}
               />
               {errors.preco && <p className="text-xs text-clay font-medium">{errors.preco}</p>}
+            </div>
+
+            {/* Peso */}
+            <div className="space-y-1.5">
+              <label htmlFor="pesoGramas" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Peso (gramas)
+              </label>
+              <input
+                type="number"
+                id="pesoGramas"
+                min="0"
+                step="1"
+                value={pesoGramas || ""}
+                onChange={(e) => setPesoGramas(Number(e.target.value))}
+                placeholder="Ex: 380"
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+              />
+              <p className="text-[10px] text-coal/40">Usado no feed do Google Shopping. Padrão: 380g.</p>
             </div>
           </div>
 
