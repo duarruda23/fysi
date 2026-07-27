@@ -20,23 +20,15 @@ export async function GET(request: Request) {
   const BASE_URL = origin;
   const BRAND = "Fysi";
 
-  // Frete para todos os países configurados no Merchant Center
-  // Preço 0 = frete calculado no checkout (aceito pelo Google)
+  // Frete apenas em BRL — mesma moeda do preço do produto.
+  // O Google Merchant Center faz conversão automática para outros países
+  // via "Conversão de moeda automática" nas configurações da conta.
+  // Misturar moedas no mesmo feed causa o erro "Moedas inconsistentes".
   const SHIPPING = `
       <g:shipping>
         <g:country>BR</g:country>
         <g:service>Padrão</g:service>
         <g:price>0.00 BRL</g:price>
-      </g:shipping>
-      <g:shipping>
-        <g:country>US</g:country>
-        <g:service>Standard</g:service>
-        <g:price>0.00 USD</g:price>
-      </g:shipping>
-      <g:shipping>
-        <g:country>PT</g:country>
-        <g:service>Standard</g:service>
-        <g:price>0.00 EUR</g:price>
       </g:shipping>`;
 
   // Atributos obrigatórios para vestuário adulto (categoria 1604)
