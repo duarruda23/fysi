@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Rota consulta dados de todos os clientes — precisa de sessão de admin a cada request
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user || !user.user_metadata?.is_admin) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    }
+
     // Busca clientes com colunas novas
     const { data: clientes, error } = await supabase
       .from("clientes")
