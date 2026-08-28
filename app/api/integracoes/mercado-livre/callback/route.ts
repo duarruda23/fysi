@@ -68,6 +68,15 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  console.log(
+    "[mercado-livre/callback] Chaves recebidas na troca de token:",
+    Object.keys(tokenData),
+    "tem refresh_token:",
+    Boolean(tokenData.refresh_token),
+    "expires_in:",
+    tokenData.expires_in
+  );
+
   const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
 
   const { error: dbError } = await supabaseService
