@@ -19,7 +19,7 @@ export async function criarFontePrimariaGoogleMerchant(): Promise<{ name: string
   const token = await getGoogleMerchantAccessToken();
 
   const res = await fetch(
-    `https://merchantapi.googleapis.com/products/v1/accounts/${GOOGLE_MERCHANT_ACCOUNT_ID}/dataSources`,
+    `https://merchantapi.googleapis.com/datasources/v1/accounts/${GOOGLE_MERCHANT_ACCOUNT_ID}/dataSources`,
     {
       method: "POST",
       headers: {
@@ -33,11 +33,20 @@ export async function criarFontePrimariaGoogleMerchant(): Promise<{ name: string
     }
   );
 
-  const data = await res.json();
+  const textoResposta = await res.text();
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(textoResposta);
+  } catch {
+    throw new Error(
+      `Falha ao criar fonte de dados — resposta não-JSON (status ${res.status}): ${textoResposta.slice(0, 500)}`
+    );
+  }
+
   if (!res.ok) {
     throw new Error(`Falha ao criar fonte de dados: ${JSON.stringify(data)}`);
   }
-  return data;
+  return data as { name: string };
 }
 
 function offerId(referencia: string, cor: string, tamanho: string): string {
@@ -115,10 +124,10 @@ export async function sincronizarPecaGoogleMerchant(pecaId: string): Promise<voi
       );
 
       if (!res.ok) {
-        const detalhe = await res.json().catch(() => null);
+        const detalhe = await res.text().catch(() => "");
         console.error(
-          `[google-merchant-sync] Falha ao publicar ${productInput.offerId}:`,
-          JSON.stringify(detalhe)
+          `[google-merchant-sync] Falha ao publicar ${productInput.offerId} (status ${res.status}):`,
+          detalhe.slice(0, 500)
         );
       }
     }
