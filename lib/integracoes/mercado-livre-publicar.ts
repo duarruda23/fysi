@@ -27,6 +27,20 @@ function mapearCorML(corFysi: string): string {
   return MAPA_COR_ML[chave] ?? corFysi;
 }
 
+// Tabela de medidas (obrigatória em categorias de moda) criada uma única vez em
+// catalog/charts pra Calças Masculino Fysi — medidas de quadril aproximadas
+// (padrão de mercado, não específicas do caimento da Fysi; ajustar depois no
+// painel do Mercado Livre se tiver a medida real). chart_id = 7110100.
+const GRID_ID_CALCAS_MASCULINO = "7110100";
+const GRID_ROW_ID_POR_TAMANHO: Record<string, string> = {
+  "36": "7110100:1",
+  "38": "7110100:2",
+  "40": "7110100:3",
+  "42": "7110100:4",
+  "44": "7110100:5",
+  "46": "7110100:6",
+};
+
 interface ResultadoVariacao {
   variacaoId: string;
   cor: string;
@@ -95,6 +109,18 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
   for (const v of variacoesRows) {
     const cor = v.cor as string;
     const tamanho = String(v.tamanho);
+    const gridRowId = GRID_ROW_ID_POR_TAMANHO[tamanho];
+
+    if (!gridRowId) {
+      resultados.push({
+        variacaoId: v.id as string,
+        cor,
+        tamanho,
+        ok: false,
+        erro: `Tamanho "${tamanho}" não está na tabela de medidas cadastrada — adicione uma linha na tabela (chart ${GRID_ID_CALCAS_MASCULINO}) antes de publicar essa variação.`,
+      });
+      continue;
+    }
 
     const payload = {
       family_name: titulo,
@@ -114,6 +140,8 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
         { id: "PANT_TYPE", value_name: tipoCalca },
         { id: "COLOR", value_name: mapearCorML(cor) },
         { id: "SIZE", value_name: tamanho },
+        { id: "SIZE_GRID_ID", value_name: GRID_ID_CALCAS_MASCULINO },
+        { id: "SIZE_GRID_ROW_ID", value_name: gridRowId },
         { id: "SELLER_SKU", value_name: `${pecaRow.referencia}-${cor}-${tamanho}` },
       ],
       shipping: {
