@@ -65,7 +65,9 @@ export async function PUT(
       // Empurra o estoque atualizado pros anúncios já publicados no Mercado
       // Livre — não bloqueia nem falha o salvamento da peça se der erro.
       await Promise.allSettled(
-        varRows.map((v) => sincronizarEstoqueVariacaoML(v.id, v.quantidade_estoque))
+        varRows.map((v: { id: string; quantidade_estoque: number }) =>
+          sincronizarEstoqueVariacaoML(v.id, v.quantidade_estoque)
+        )
       );
     }
   }
