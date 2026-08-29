@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getValidMercadoLivreToken } from "./mercado-livre";
+import { dispatchWebhook } from "@/lib/webhook-dispatch";
 
 const supabaseService = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -178,6 +179,86 @@ export async function criarPedidoImportadoML(params: {
   }
 
   return { criado: true, pedidoId: id, numero: proximoNumero };
+}
+
+interface PedidoMercadoLivreResumo {
+  id: number | string;
+  status: string;
+  order_items?: {
+    item?: { id?: string };
+    quantity?: number;
+    unit_price?: number;
+  }[];
+  buyer?: {
+    nickname?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
+/**
+ * Processa um pedido do Mercado Livre já buscado (seja via webhook real ou
+ * via simulação admin): resolve os itens vendidos pras variações da Fysi,
+ * cria o pedido (idempotente), desconta estoque e dispara o webhook interno
+ * — só na primeira vez que esse pedido é processado.
+ */
+export async function processarPedidoPagoML(
+  order: PedidoMercadoLivreResumo
+): Promise<{ criado: boolean; pedidoId?: string; numero?: number }> {
+  if (order.status !== "paid") return { criado: false };
+
+  const itensResolvidos: (ItemPedidoML & { quantidade: number })[] = [];
+
+  for (const orderItem of order.order_items ?? []) {
+    const itemId = orderItem.item?.id;
+    const quantidade = orderItem.quantity;
+    if (!itemId || !quantidade) continue;
+
+    const detalhe = await buscarDetalhesVariacaoPorItemML(itemId);
+    if (!detalhe) {
+      console.error("[mercado-livre-sync] Item vendido não mapeado pra nenhuma peça:", itemId);
+      continue;
+    }
+
+    itensResolvidos.push({
+      ...detalhe,
+      quantidade,
+      precoUnitario: Number(orderItem.unit_price ?? 0),
+    });
+  }
+
+  if (itensResolvidos.length === 0) return { criado: false };
+
+  const buyer = order.buyer ?? {};
+  const clienteNome =
+    buyer.first_name && buyer.last_name
+      ? `${buyer.first_name} ${buyer.last_name}`
+      : buyer.nickname ?? "Comprador Mercado Livre";
+
+  const resultado = await criarPedidoImportadoML({
+    pedidoExternoId: String(order.id),
+    clienteNome,
+    itens: itensResolvidos,
+  });
+
+  // Só desconta estoque e dispara webhook na primeira vez que esse pedido é
+  // processado — o ML pode reenviar a mesma notificação mais de uma vez.
+  if (!resultado.criado) return resultado;
+
+  for (const item of itensResolvidos) {
+    await baixarEstoqueVariacao(item.variacaoId, item.quantidade);
+  }
+
+  dispatchWebhook("novo_pedido", {
+    pedidoId: resultado.pedidoId,
+    numero: resultado.numero,
+    origem: "mercado_livre",
+    pedidoExternoId: String(order.id),
+    cliente: { nome: clienteNome },
+    itens: itensResolvidos,
+  });
+
+  return resultado;
 }
 
 /**
