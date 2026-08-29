@@ -105,7 +105,7 @@ export async function sincronizarPecaGoogleMerchant(pecaId: string): Promise<voi
           condition: "NEW",
           itemGroupId: pecaId,
           color: cor,
-          sizes: [tamanho],
+          size: tamanho,
           gender: "male",
           ageGroup: "adult",
           brand: "Fysi",
