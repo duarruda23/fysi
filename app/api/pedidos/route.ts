@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import type { ItemPedido, Pedido } from "@/lib/types";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
 import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
+import { sincronizarPecaGoogleMerchant } from "@/lib/integracoes/google-merchant-sync";
 
 function mapPedidoRow(
   row: Record<string, unknown>,
@@ -139,6 +140,7 @@ export async function POST(request: Request) {
 
   // Pedido avulso já aprovado na criação — debitar estoque imediatamente
   if (statusInicial === "aprovado") {
+    const pecasAfetadas = new Set<string>();
     for (const item of body.itens as ItemPedido[]) {
       const { data: varRow } = await supabase
         .from("variacoes_peca")
@@ -156,8 +158,12 @@ export async function POST(request: Request) {
           .update({ quantidade_estoque: novoEstoque })
           .eq("id", item.variacaoId);
         await sincronizarEstoqueVariacaoML(item.variacaoId, novoEstoque);
+        pecasAfetadas.add(item.pecaId);
       }
     }
+    await Promise.allSettled(
+      Array.from(pecasAfetadas).map((pecaId) => sincronizarPecaGoogleMerchant(pecaId))
+    );
   }
 
   // Disparar webhook de novo pedido (fire-and-forget)

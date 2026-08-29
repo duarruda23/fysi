@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { getValidMercadoLivreToken } from "./mercado-livre";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
+import { sincronizarPecaGoogleMerchant } from "./google-merchant-sync";
 
 const supabaseService = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -248,6 +249,11 @@ export async function processarPedidoPagoML(
   for (const item of itensResolvidos) {
     await baixarEstoqueVariacao(item.variacaoId, item.quantidade);
   }
+
+  const pecasAfetadas = new Set(itensResolvidos.map((item) => item.pecaId));
+  await Promise.allSettled(
+    Array.from(pecasAfetadas).map((pecaId) => sincronizarPecaGoogleMerchant(pecaId))
+  );
 
   dispatchWebhook("novo_pedido", {
     pedidoId: resultado.pedidoId,

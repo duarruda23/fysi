@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
 import type { WebhookGatilho } from "@/lib/types";
 import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
+import { sincronizarPecaGoogleMerchant } from "@/lib/integracoes/google-merchant-sync";
 
 export async function PATCH(
   request: Request,
@@ -32,6 +33,7 @@ export async function PATCH(
 
   // Se aprovado, debitar estoque
   if (body.status === "aprovado" && body.itens?.length) {
+    const pecasAfetadas = new Set<string>();
     for (const item of body.itens) {
       const { data: varRow } = await supabase
         .from("variacoes_peca")
@@ -49,8 +51,12 @@ export async function PATCH(
           .update({ quantidade_estoque: novoEstoque })
           .eq("id", item.variacaoId);
         await sincronizarEstoqueVariacaoML(item.variacaoId, novoEstoque);
+        pecasAfetadas.add(item.pecaId);
       }
     }
+    await Promise.allSettled(
+      Array.from(pecasAfetadas).map((pecaId) => sincronizarPecaGoogleMerchant(pecaId))
+    );
   }
 
   // Disparar webhook conforme novo status

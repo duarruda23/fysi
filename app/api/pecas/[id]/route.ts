@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { VariacaoPeca } from "@/lib/types";
 import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
+import { sincronizarPecaGoogleMerchant } from "@/lib/integracoes/google-merchant-sync";
 
 export async function PUT(
   request: Request,
@@ -84,6 +85,7 @@ export async function PUT(
           sincronizarEstoqueVariacaoML(v.id, v.quantidade_estoque)
         )
       );
+      await sincronizarPecaGoogleMerchant(id);
     }
   }
 
