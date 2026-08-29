@@ -88,7 +88,6 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
 
   const payload = {
     title: (pecaRow.nome as string).slice(0, 60),
-    family_name: (pecaRow.nome as string).slice(0, 60),
     category_id: CATEGORIA_CALCAS_ML,
     price: Number(pecaRow.preco),
     currency_id: "BRL",
