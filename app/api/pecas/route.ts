@@ -21,6 +21,8 @@ function mapRow(row: Record<string, unknown>, variacoes: VariacaoPeca[]): Peca {
     envioTexto: (row.envio_texto as string) ?? "",
     devolucoesTexto: (row.devolucoes_texto as string) ?? "",
     videoYoutube: (row.video_youtube as string) ?? "",
+    materialPrincipal: (row.material_principal as string) ?? "",
+    tipoCalca: (row.tipo_calca as string) ?? "",
   };
 }
 
@@ -82,6 +84,8 @@ export async function POST(request: Request) {
     envio_texto: pecaData.envioTexto ?? "",
     devolucoes_texto: pecaData.devolucoesTexto ?? "",
     video_youtube: pecaData.videoYoutube || null,
+    material_principal: pecaData.materialPrincipal || null,
+    tipo_calca: pecaData.tipoCalca || null,
   });
 
   if (pecaError) {

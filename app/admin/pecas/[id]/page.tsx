@@ -7,7 +7,7 @@ import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-re
 import { useStore } from "@/lib/store";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
-import { TAMANHOS_LETRA, TAMANHOS_NUMERO } from "@/lib/types";
+import { TAMANHOS_LETRA, TAMANHOS_NUMERO, MATERIAIS_PRINCIPAIS_ML, TIPOS_CALCA_ML } from "@/lib/types";
 
 type ModoTamanho = "letra" | "numero";
 
@@ -34,6 +34,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [useCustomCategory, setUseCustomCategory] = useState(false);
   const [preco, setPreco] = useState<number>(0);
   const [pesoGramas, setPesoGramas] = useState<number>(380);
+  const [materialPrincipal, setMaterialPrincipal] = useState("");
+  const [tipoCalca, setTipoCalca] = useState("");
   const [descricao, setDescricao] = useState("");
   const [bullets, setBullets] = useState<string[]>([""]);
   const [detalheTexto, setDetalheTexto] = useState("");
@@ -65,6 +67,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setDescricao(pecaToEdit.descricao ?? "");
       setPreco(pecaToEdit.preco ?? 0);
       setPesoGramas(pecaToEdit.pesoGramas ?? 380);
+      setMaterialPrincipal(pecaToEdit.materialPrincipal ?? "");
+      setTipoCalca(pecaToEdit.tipoCalca ?? "");
       setFotos(pecaToEdit.fotos?.length ? pecaToEdit.fotos : [""]);
       setVideoYoutube(pecaToEdit.videoYoutube ?? "");
       setAtivo(pecaToEdit.ativo ?? true);
@@ -163,6 +167,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         categoria: finalCat,
         preco,
         pesoGramas,
+        materialPrincipal,
+        tipoCalca,
         descricao,
         fotos: fotosFinais,
         videoYoutube: videoYoutube.trim() || "",
@@ -292,6 +298,44 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
                 className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
               />
               <p className="text-[10px] text-coal/40">Usado no feed do Google Shopping. Padrão: 380g.</p>
+            </div>
+          </div>
+
+          {/* Atributos pro Mercado Livre */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="materialPrincipal" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Material Principal
+              </label>
+              <select
+                id="materialPrincipal"
+                value={materialPrincipal}
+                onChange={(e) => setMaterialPrincipal(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none bg-white"
+              >
+                <option value="">Selecione...</option>
+                {MATERIAIS_PRINCIPAIS_ML.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-coal/40">Pra publicar no Mercado Livre.</p>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="tipoCalca" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Tipo de Calça
+              </label>
+              <select
+                id="tipoCalca"
+                value={tipoCalca}
+                onChange={(e) => setTipoCalca(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none bg-white"
+              >
+                <option value="">Selecione...</option>
+                {TIPOS_CALCA_ML.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-coal/40">Pra publicar no Mercado Livre.</p>
             </div>
           </div>
 

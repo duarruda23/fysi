@@ -7,6 +7,23 @@ export type TamanhoLetra = typeof TAMANHOS_LETRA[number];
 export type TamanhoNumero = typeof TAMANHOS_NUMERO[number];
 export type Tamanho = TamanhoLetra | TamanhoNumero | string;
 
+// Valores fixos exigidos pelo Mercado Livre na categoria Calças (MLB188065) —
+// atributos MAIN_MATERIAL e PANT_TYPE. Vêm direto da API deles (categories/MLB188065/attributes).
+export const MATERIAIS_PRINCIPAIS_ML = [
+  "Sarja", "Tactel", "Cirre", "Jeans", "Algodão", "Poliéster", "Malha", "Linho",
+  "Modal", "Viscose", "Microfibra", "Elastano", "Veludo", "Cetim", "Couro",
+  "Couro sintético", "Acrílico", "Lã", "Lurex", "Jacquard", "Seda", "Lantejoulas",
+  "Gabardine", "Lycra", "Cotelé", "Moletom", "Bouclé", "Brocado", "Camurça",
+  "Chiffon", "Crepé", "Crochê", "Renda", "Tricô", "Tule", "Tweed", "Verniz",
+  "Plush", "Alfaiataria",
+] as const;
+
+export const TIPOS_CALCA_ML = [
+  "Jeans", "Social", "Pantalona", "Flare", "Cargo", "Saruel", "Legging",
+  "Esportiva", "Conversível", "Gestante", "Jogger", "Jegging", "Clochard",
+  "Aladdin", "Skouser",
+] as const;
+
 export interface VariacaoPeca {
   id: string;
   cor: string;
@@ -33,6 +50,9 @@ export interface Peca {
   envioTexto?: string;
   devolucoesTexto?: string;
   videoYoutube?: string;
+  // Atributos pra publicar no Mercado Livre (categoria Calças) — opcionais até a peça ser publicada lá
+  materialPrincipal?: string;
+  tipoCalca?: string;
 }
 
 export type StatusPedido = "pendente" | "aprovado" | "recusado";
