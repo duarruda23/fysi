@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { VariacaoPeca } from "@/lib/types";
+import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
 
 export async function PUT(
   request: Request,
@@ -60,6 +61,12 @@ export async function PUT(
       if (varError) {
         return NextResponse.json({ error: varError.message }, { status: 500 });
       }
+
+      // Empurra o estoque atualizado pros anúncios já publicados no Mercado
+      // Livre — não bloqueia nem falha o salvamento da peça se der erro.
+      await Promise.allSettled(
+        varRows.map((v) => sincronizarEstoqueVariacaoML(v.id, v.quantidade_estoque))
+      );
     }
   }
 

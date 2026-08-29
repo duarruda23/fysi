@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { ItemPedido, Pedido } from "@/lib/types";
 import { dispatchWebhook } from "@/lib/webhook-dispatch";
+import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
 
 function mapPedidoRow(
   row: Record<string, unknown>,
@@ -152,6 +153,7 @@ export async function POST(request: Request) {
           .from("variacoes_peca")
           .update({ quantidade_estoque: novoEstoque })
           .eq("id", item.variacaoId);
+        await sincronizarEstoqueVariacaoML(item.variacaoId, novoEstoque);
       }
     }
   }
