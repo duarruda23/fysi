@@ -81,11 +81,18 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
     seller_custom_field: `${pecaRow.referencia}-${v.cor}-${v.tamanho}`,
   }));
 
+  const quantidadeTotal = variacoesRows.reduce(
+    (soma, v) => soma + ((v.quantidade_estoque as number) ?? 0),
+    0
+  );
+
   const payload = {
     title: (pecaRow.nome as string).slice(0, 60),
+    family_name: (pecaRow.nome as string).slice(0, 60),
     category_id: CATEGORIA_CALCAS_ML,
     price: Number(pecaRow.preco),
     currency_id: "BRL",
+    available_quantity: quantidadeTotal,
     buying_mode: "buy_it_now",
     listing_type_id: "gold_special",
     condition: "new",
