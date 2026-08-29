@@ -27,13 +27,30 @@ function mapearCorML(corFysi: string): string {
   return MAPA_COR_ML[chave] ?? corFysi;
 }
 
-interface ResultadoPublicacao {
+interface ResultadoVariacao {
+  variacaoId: string;
+  cor: string;
+  tamanho: string;
   ok: boolean;
   itemId?: string;
   erro?: string;
   detalhe?: unknown;
 }
 
+interface ResultadoPublicacao {
+  ok: boolean;
+  erro?: string;
+  variacoes?: ResultadoVariacao[];
+}
+
+/**
+ * Publica uma peça no Mercado Livre. A conta usa o modelo "User Products":
+ * não existe mais um único anúncio com array de `variations` interno — cada
+ * combinação de cor+tamanho vira seu próprio item (POST /items), e a API do
+ * ML agrupa automaticamente os itens com marca/modelo/gênero iguais numa
+ * mesma família, exibida ao comprador como um único anúncio com seletor de
+ * cor/tamanho (User Products Page).
+ */
 export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<ResultadoPublicacao> {
   const { data: pecaRow, error: pecaError } = await supabaseService
     .from("pecas")
@@ -70,101 +87,102 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
   }
 
   const token = await getValidMercadoLivreToken();
-
-  const variations = variacoesRows.map((v) => ({
-    attribute_combinations: [
-      { id: "COLOR", value_name: mapearCorML(v.cor as string) },
-      { id: "SIZE", value_name: String(v.tamanho) },
-    ],
-    price: Number(pecaRow.preco),
-    available_quantity: v.quantidade_estoque as number,
-    seller_custom_field: `${pecaRow.referencia}-${v.cor}-${v.tamanho}`,
-  }));
-
-  const quantidadeTotal = variacoesRows.reduce(
-    (soma, v) => soma + ((v.quantidade_estoque as number) ?? 0),
-    0
-  );
-
-  const payload = {
-    title: (pecaRow.nome as string).slice(0, 60),
-    category_id: CATEGORIA_CALCAS_ML,
-    price: Number(pecaRow.preco),
-    currency_id: "BRL",
-    available_quantity: quantidadeTotal,
-    buying_mode: "buy_it_now",
-    listing_type_id: "gold_special",
-    condition: "new",
-    pictures: fotos.map((url) => ({ source: url })),
-    attributes: [
-      { id: "BRAND", value_name: "Fysi" },
-      { id: "MODEL", value_name: pecaRow.referencia },
-      { id: "GENDER", value_name: "Masculino" },
-      { id: "MAIN_MATERIAL", value_name: materialPrincipal },
-      { id: "PANT_TYPE", value_name: tipoCalca },
-    ],
-    shipping: {
-      mode: "me2",
-      local_pick_up: false,
-      free_shipping: false,
-    },
-    variations,
-  };
-
-  const itemRes = await fetch("https://api.mercadolibre.com/items", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
-
-  const itemData = await itemRes.json();
-
-  if (!itemRes.ok) {
-    await supabaseService.from("publicacoes_marketplace").upsert(
-      {
-        peca_id: pecaId,
-        canal: "mercado_livre",
-        status: "erro",
-        erro_detalhe: JSON.stringify(itemData),
-        atualizado_em: new Date().toISOString(),
-      },
-      { onConflict: "peca_id,canal" }
-    );
-    return { ok: false, erro: "Mercado Livre recusou a publicação.", detalhe: itemData };
-  }
-
-  const itemId = itemData.id as string;
-
-  // Descrição em texto plano — chamada separada, não bloqueia a publicação se falhar
+  const titulo = (pecaRow.nome as string).slice(0, 60);
   const descricaoTexto = [pecaRow.descricao, pecaRow.detalhe_texto].filter(Boolean).join("\n\n");
-  if (descricaoTexto.trim()) {
-    await fetch(`https://api.mercadolibre.com/items/${itemId}/description`, {
+
+  const resultados: ResultadoVariacao[] = [];
+
+  for (const v of variacoesRows) {
+    const cor = v.cor as string;
+    const tamanho = String(v.tamanho);
+
+    const payload = {
+      title: titulo,
+      family_name: titulo,
+      category_id: CATEGORIA_CALCAS_ML,
+      price: Number(pecaRow.preco),
+      currency_id: "BRL",
+      available_quantity: v.quantidade_estoque as number,
+      buying_mode: "buy_it_now",
+      listing_type_id: "gold_special",
+      condition: "new",
+      pictures: fotos.map((url) => ({ source: url })),
+      attributes: [
+        { id: "BRAND", value_name: "Fysi" },
+        { id: "MODEL", value_name: pecaRow.referencia },
+        { id: "GENDER", value_name: "Masculino" },
+        { id: "MAIN_MATERIAL", value_name: materialPrincipal },
+        { id: "PANT_TYPE", value_name: tipoCalca },
+        { id: "COLOR", value_name: mapearCorML(cor) },
+        { id: "SIZE", value_name: tamanho },
+        { id: "SELLER_SKU", value_name: `${pecaRow.referencia}-${cor}-${tamanho}` },
+      ],
+      shipping: {
+        mode: "me2",
+        local_pick_up: false,
+        free_shipping: false,
+      },
+    };
+
+    const itemRes = await fetch("https://api.mercadolibre.com/items", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ plain_text: descricaoTexto.slice(0, 50000) }),
-    }).catch(() => {
-      // Não falha a publicação por causa da descrição — item já está no ar.
+      body: JSON.stringify(payload),
     });
+
+    const itemData = await itemRes.json();
+
+    if (!itemRes.ok) {
+      await supabaseService.from("publicacoes_marketplace").upsert(
+        {
+          peca_id: pecaId,
+          variacao_id: v.id as string,
+          canal: "mercado_livre",
+          status: "erro",
+          erro_detalhe: JSON.stringify(itemData),
+          atualizado_em: new Date().toISOString(),
+        },
+        { onConflict: "variacao_id,canal" }
+      );
+      resultados.push({ variacaoId: v.id as string, cor, tamanho, ok: false, detalhe: itemData });
+      continue;
+    }
+
+    const itemId = itemData.id as string;
+
+    if (descricaoTexto.trim()) {
+      await fetch(`https://api.mercadolibre.com/items/${itemId}/description`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plain_text: descricaoTexto.slice(0, 50000) }),
+      }).catch(() => {
+        // Não falha a publicação por causa da descrição — item já está no ar.
+      });
+    }
+
+    await supabaseService.from("publicacoes_marketplace").upsert(
+      {
+        peca_id: pecaId,
+        variacao_id: v.id as string,
+        canal: "mercado_livre",
+        item_id_externo: itemId,
+        status: "publicado",
+        erro_detalhe: null,
+        publicado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      },
+      { onConflict: "variacao_id,canal" }
+    );
+
+    resultados.push({ variacaoId: v.id as string, cor, tamanho, ok: true, itemId });
   }
 
-  await supabaseService.from("publicacoes_marketplace").upsert(
-    {
-      peca_id: pecaId,
-      canal: "mercado_livre",
-      item_id_externo: itemId,
-      status: "publicado",
-      erro_detalhe: null,
-      publicado_em: new Date().toISOString(),
-      atualizado_em: new Date().toISOString(),
-    },
-    { onConflict: "peca_id,canal" }
-  );
-
-  return { ok: true, itemId };
+  const todasOk = resultados.every((r) => r.ok);
+  return { ok: todasOk, variacoes: resultados };
 }

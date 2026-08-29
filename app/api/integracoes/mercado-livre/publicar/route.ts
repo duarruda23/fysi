@@ -25,12 +25,14 @@ export async function POST(request: NextRequest) {
 
   const resultado = await publicarPecaNoMercadoLivre(pecaId);
 
-  if (!resultado.ok) {
-    return NextResponse.json(
-      { error: resultado.erro, detalhe: resultado.detalhe },
-      { status: 502 }
-    );
+  if (resultado.erro) {
+    // Erro antes de tentar publicar (peça inválida, sem atributos, etc.)
+    return NextResponse.json({ error: resultado.erro }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, itemId: resultado.itemId });
+  // ok pode ser false com sucesso parcial — algumas variações publicadas, outras não.
+  return NextResponse.json(
+    { ok: resultado.ok, variacoes: resultado.variacoes },
+    { status: resultado.ok ? 200 : 207 }
+  );
 }
