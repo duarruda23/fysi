@@ -97,7 +97,6 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
     const tamanho = String(v.tamanho);
 
     const payload = {
-      title: titulo,
       family_name: titulo,
       category_id: CATEGORIA_CALCAS_ML,
       price: Number(pecaRow.preco),
