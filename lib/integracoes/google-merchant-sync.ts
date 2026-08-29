@@ -10,9 +10,10 @@ const supabaseService = createClient(
 const CONTENT_LANGUAGE = "pt";
 const FEED_LABEL = "BR";
 
-// Fonte de dados primária criada uma única vez (accounts/{id}/dataSources/{DATASOURCE_ID})
-// via /api/integracoes/google-merchant/criar-fonte — necessária pra inserir produtos pela API.
-export const GOOGLE_MERCHANT_DATASOURCE = process.env.GOOGLE_MERCHANT_DATASOURCE_NAME ?? "";
+// Fonte de dados primária criada uma única vez em 29/08 via
+// /api/integracoes/google-merchant/criar-fonte — não é segredo, só um
+// identificador de recurso, por isso fica fixo no código.
+export const GOOGLE_MERCHANT_DATASOURCE = "accounts/5820482310/dataSources/10717038603";
 
 /** Cria a fonte de dados primária da conta (passo único de setup). */
 export async function criarFontePrimariaGoogleMerchant(): Promise<{ name: string }> {
