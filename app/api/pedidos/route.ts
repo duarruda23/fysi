@@ -24,6 +24,8 @@ function mapPedidoRow(
     motivoRecusa: (row.motivo_recusa as string) ?? undefined,
     criadoEm: row.criado_em as string,
     respondidoEm: (row.respondido_em as string) ?? undefined,
+    origem: (row.origem as string) ?? "fysi",
+    pedidoExternoId: (row.pedido_externo_id as string) ?? undefined,
   };
 }
 

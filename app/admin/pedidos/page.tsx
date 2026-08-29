@@ -612,8 +612,13 @@ export default function AdminOrdersPage() {
 
                 {/* Cliente */}
                 <div className="min-w-0">
-                  <p className="font-bold text-ink text-sm md:text-base line-clamp-1">
+                  <p className="font-bold text-ink text-sm md:text-base line-clamp-1 flex items-center gap-1.5">
                     {pedido.cliente.nome}
+                    {pedido.origem === "mercado_livre" && (
+                      <span className="inline-flex items-center rounded-full bg-yellow-100 text-yellow-700 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0">
+                        ML
+                      </span>
+                    )}
                   </p>
                   <p className="text-xs text-coal/50 font-mono mt-0.5">{pedido.cliente.telefone}</p>
                 </div>

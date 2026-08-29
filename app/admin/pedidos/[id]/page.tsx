@@ -272,14 +272,25 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
 
               <div className="space-y-0.5">
                 <span className="font-semibold text-coal/45 uppercase tracking-wider block">WhatsApp / Telefone</span>
-                <a
-                  href={`https://wa.me/${pedido.cliente.telefone.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-bold text-gold hover:underline flex items-center gap-1 text-sm mt-0.5"
-                >
-                  {pedido.cliente.telefone}
-                </a>
+                {pedido.origem === "mercado_livre" ? (
+                  <a
+                    href={`https://www.mercadolivre.com.br/vendas/${pedido.pedidoExternoId}/detalhe`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-gold hover:underline flex items-center gap-1 text-sm mt-0.5"
+                  >
+                    Ver pedido no Mercado Livre
+                  </a>
+                ) : (
+                  <a
+                    href={`https://wa.me/${pedido.cliente.telefone.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-gold hover:underline flex items-center gap-1 text-sm mt-0.5"
+                  >
+                    {pedido.cliente.telefone}
+                  </a>
+                )}
               </div>
 
               <div className="space-y-1">

@@ -51,23 +51,133 @@ export async function sincronizarEstoqueVariacaoML(
   }
 }
 
+export interface DetalheVariacaoML {
+  variacaoId: string;
+  pecaId: string;
+  nomePeca: string;
+  cor: string;
+  tamanho: string;
+}
+
 /**
  * Dado o item_id de um anúncio do Mercado Livre, encontra a variação da
- * Fysi correspondente (usado pelo webhook de pedidos pra baixar estoque
- * local quando uma venda acontece lá).
+ * Fysi correspondente (peça, cor, tamanho) — usado pelo webhook de pedidos
+ * pra baixar estoque local e montar o registro do pedido importado.
  */
-export async function buscarVariacaoPorItemML(
+export async function buscarDetalhesVariacaoPorItemML(
   itemId: string
-): Promise<{ variacaoId: string; pecaId: string } | null> {
-  const { data } = await supabaseService
+): Promise<DetalheVariacaoML | null> {
+  const { data: publicacao } = await supabaseService
     .from("publicacoes_marketplace")
     .select("variacao_id, peca_id")
     .eq("item_id_externo", itemId)
     .eq("canal", "mercado_livre")
     .maybeSingle();
 
-  if (!data || !data.variacao_id) return null;
-  return { variacaoId: data.variacao_id as string, pecaId: data.peca_id as string };
+  if (!publicacao || !publicacao.variacao_id) return null;
+
+  const { data: variacao } = await supabaseService
+    .from("variacoes_peca")
+    .select("cor, tamanho")
+    .eq("id", publicacao.variacao_id)
+    .single();
+
+  const { data: peca } = await supabaseService
+    .from("pecas")
+    .select("nome")
+    .eq("id", publicacao.peca_id)
+    .single();
+
+  if (!variacao || !peca) return null;
+
+  return {
+    variacaoId: publicacao.variacao_id as string,
+    pecaId: publicacao.peca_id as string,
+    nomePeca: peca.nome as string,
+    cor: variacao.cor as string,
+    tamanho: String(variacao.tamanho),
+  };
+}
+
+interface ItemPedidoML {
+  pecaId: string;
+  variacaoId: string;
+  nomePeca: string;
+  cor: string;
+  tamanho: string;
+  quantidade: number;
+  precoUnitario: number;
+}
+
+/**
+ * Cria um pedido no sistema da Fysi a partir de um pedido pago no Mercado
+ * Livre, pra aparecer no painel de admin igual um pedido do site. Idempotente
+ * por (origem, pedido_externo_id) — o ML pode reenviar a mesma notificação.
+ */
+export async function criarPedidoImportadoML(params: {
+  pedidoExternoId: string;
+  clienteNome: string;
+  itens: ItemPedidoML[];
+}): Promise<{ criado: boolean; pedidoId?: string; numero?: number }> {
+  const { pedidoExternoId, clienteNome, itens } = params;
+
+  const { data: existente } = await supabaseService
+    .from("pedidos")
+    .select("id, numero")
+    .eq("origem", "mercado_livre")
+    .eq("pedido_externo_id", pedidoExternoId)
+    .maybeSingle();
+
+  if (existente) {
+    return { criado: false, pedidoId: existente.id as string, numero: existente.numero as number };
+  }
+
+  const { data: maxRow } = await supabaseService
+    .from("pedidos")
+    .select("numero")
+    .order("numero", { ascending: false })
+    .limit(1)
+    .single();
+
+  const proximoNumero = maxRow ? (maxRow.numero as number) + 1 : 1205;
+  const id = `pedido-ml-${pedidoExternoId}`;
+  const total = itens.reduce((soma, it) => soma + it.quantidade * it.precoUnitario, 0);
+
+  const { error: pedidoError } = await supabaseService.from("pedidos").insert({
+    id,
+    numero: proximoNumero,
+    cliente_nome: clienteNome,
+    cliente_telefone: "Ver no Mercado Livre",
+    cliente_endereco: "Envio via Mercado Envios — etiqueta gerada no painel do Mercado Livre",
+    total,
+    status: "aprovado",
+    origem: "mercado_livre",
+    pedido_externo_id: pedidoExternoId,
+    respondido_em: new Date().toISOString(),
+  });
+
+  if (pedidoError) {
+    console.error("[mercado-livre-sync] Erro ao criar pedido importado:", pedidoError);
+    return { criado: false };
+  }
+
+  const itensRows = itens.map((it) => ({
+    pedido_id: id,
+    peca_id: it.pecaId,
+    variacao_id: it.variacaoId,
+    nome_peca: it.nomePeca,
+    cor: it.cor,
+    tamanho: it.tamanho,
+    quantidade: it.quantidade,
+    preco_unitario: it.precoUnitario,
+  }));
+
+  const { error: itensError } = await supabaseService.from("itens_pedido").insert(itensRows);
+  if (itensError) {
+    console.error("[mercado-livre-sync] Pedido criado, mas falhou ao salvar itens:", itensError);
+  }
+
+  return { criado: true, pedidoId: id, numero: proximoNumero };
 }
 
 /**

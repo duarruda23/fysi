@@ -83,6 +83,9 @@ export interface Pedido {
   motivoRecusa?: string;
   criadoEm: string;
   respondidoEm?: string;
+  // De onde o pedido veio — "fysi" (site/avulso) ou "mercado_livre" (importado via webhook)
+  origem?: string;
+  pedidoExternoId?: string;
 }
 
 export interface Categoria {
