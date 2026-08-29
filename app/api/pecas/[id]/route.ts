@@ -40,23 +40,38 @@ export async function PUT(
     }
   }
 
-  // Se variações foram enviadas, substituir tudo
+  // Se variações foram enviadas, sincroniza a lista — upsert em vez de
+  // delete+reinsert, porque variacoes_peca é referenciada por
+  // publicacoes_marketplace (on delete cascade): recriar a linha com o
+  // mesmo id apagava o vínculo com o anúncio já publicado no Mercado Livre.
   if (variacoes !== undefined) {
-    await supabase.from("variacoes_peca").delete().eq("peca_id", id);
+    const varRows = variacoes.map((v: VariacaoPeca, i: number) => ({
+      id: v.id || `var-${Date.now()}-${i}`,
+      peca_id: id,
+      cor: v.cor,
+      cor_hex: v.corHex ?? null,
+      tamanho: v.tamanho,
+      quantidade_estoque: v.quantidadeEstoque ?? 0,
+    }));
 
-    if (variacoes.length > 0) {
-      const varRows = variacoes.map((v: VariacaoPeca, i: number) => ({
-        id: v.id || `var-${Date.now()}-${i}`,
-        peca_id: id,
-        cor: v.cor,
-        cor_hex: v.corHex ?? null,
-        tamanho: v.tamanho,
-        quantidade_estoque: v.quantidadeEstoque ?? 0,
-      }));
+    const idsAtuais = varRows.map((v: { id: string }) => v.id);
 
+    // Remove só as variações que existiam antes e não vieram mais nessa edição
+    const { data: existentes } = await supabase
+      .from("variacoes_peca")
+      .select("id")
+      .eq("peca_id", id);
+    const idsParaRemover = (existentes ?? [])
+      .map((r) => r.id as string)
+      .filter((existingId) => !idsAtuais.includes(existingId));
+    if (idsParaRemover.length > 0) {
+      await supabase.from("variacoes_peca").delete().in("id", idsParaRemover);
+    }
+
+    if (varRows.length > 0) {
       const { error: varError } = await supabase
         .from("variacoes_peca")
-        .insert(varRows);
+        .upsert(varRows, { onConflict: "id" });
 
       if (varError) {
         return NextResponse.json({ error: varError.message }, { status: 500 });
