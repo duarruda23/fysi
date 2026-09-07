@@ -144,11 +144,23 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
         { id: "SIZE_GRID_ROW_ID", value_name: gridRowId },
         { id: "SELLER_SKU", value_name: `${pecaRow.referencia}-${cor}-${tamanho}` },
       ],
+      // Frete grátis pro comprador é obrigatório no Mercado Livre pra qualquer item
+      // a partir de R$19 desde jun/2025 (antes era só a partir de R$79) — declarar
+      // `free_shipping: false` nessa faixa é o que estava disparando a moderação
+      // automática ("não inclua outros tipos de serviço no valor do custo de frete")
+      // nos 7 anúncios pausados. Peso declarado (`dimensions`) também importa: desde
+      // mar/2026 o custo pra itens abaixo de R$79 é calculado por peso/medida, não
+      // mais fixo.
       shipping: {
         mode: "me2",
         local_pick_up: false,
-        free_shipping: false,
+        free_shipping: true,
       },
+      // Formato "LxWxH,peso" (cm, cm, cm, gramas) — peso vem de `pecas.peso_gramas`
+      // (hoje só usado aqui, nunca era enviado pro ML antes desta correção).
+      // Dimensões de embalagem são um valor de mercado (calça dobrada em saco
+      // plástico) até a Fysi ter a medida real da própria embalagem.
+      dimensions: `25x20x3,${pecaRow.peso_gramas ?? 380}`,
     };
 
     const itemRes = await fetch("https://api.mercadolibre.com/items", {
