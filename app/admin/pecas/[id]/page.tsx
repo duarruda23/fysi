@@ -36,6 +36,9 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [preco, setPreco] = useState<number>(0);
   const [precoMercadoLivre, setPrecoMercadoLivre] = useState<number | undefined>(undefined);
   const [pesoGramas, setPesoGramas] = useState<number>(380);
+  const [larguraCm, setLarguraCm] = useState<number | undefined>(undefined);
+  const [comprimentoCm, setComprimentoCm] = useState<number | undefined>(undefined);
+  const [alturaCm, setAlturaCm] = useState<number | undefined>(undefined);
   const [materialPrincipal, setMaterialPrincipal] = useState("");
   const [tipoCalca, setTipoCalca] = useState("");
   const [prazoDisponibilidadeDias, setPrazoDisponibilidadeDias] = useState<number | undefined>(undefined);
@@ -72,6 +75,9 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setPreco(pecaToEdit.preco ?? 0);
       setPrecoMercadoLivre(pecaToEdit.precoMercadoLivre ?? undefined);
       setPesoGramas(pecaToEdit.pesoGramas ?? 380);
+      setLarguraCm(pecaToEdit.larguraCm ?? undefined);
+      setComprimentoCm(pecaToEdit.comprimentoCm ?? undefined);
+      setAlturaCm(pecaToEdit.alturaCm ?? undefined);
       setMaterialPrincipal(pecaToEdit.materialPrincipal ?? "");
       setTipoCalca(pecaToEdit.tipoCalca ?? "");
       setPrazoDisponibilidadeDias(pecaToEdit.prazoDisponibilidadeDias ?? undefined);
@@ -175,6 +181,9 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         preco,
         precoMercadoLivre: precoMercadoLivre || undefined,
         pesoGramas,
+        larguraCm,
+        comprimentoCm,
+        alturaCm,
         materialPrincipal,
         tipoCalca,
         prazoDisponibilidadeDias,
@@ -309,6 +318,59 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
               />
               <p className="text-[10px] text-coal/40">Usado no feed do Google Shopping. Padrão: 380g.</p>
             </div>
+          </div>
+
+          {/* Dimensões da embalagem */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <label htmlFor="larguraCm" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Largura (cm)
+              </label>
+              <input
+                type="number"
+                id="larguraCm"
+                min="0"
+                step="0.5"
+                value={larguraCm ?? ""}
+                onChange={(e) => setLarguraCm(e.target.value === "" ? undefined : Number(e.target.value))}
+                placeholder="Ex: 24"
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="comprimentoCm" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Comprimento (cm)
+              </label>
+              <input
+                type="number"
+                id="comprimentoCm"
+                min="0"
+                step="0.5"
+                value={comprimentoCm ?? ""}
+                onChange={(e) => setComprimentoCm(e.target.value === "" ? undefined : Number(e.target.value))}
+                placeholder="Ex: 28"
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="alturaCm" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Altura (cm)
+              </label>
+              <input
+                type="number"
+                id="alturaCm"
+                min="0"
+                step="0.5"
+                value={alturaCm ?? ""}
+                onChange={(e) => setAlturaCm(e.target.value === "" ? undefined : Number(e.target.value))}
+                placeholder="Ex: 4"
+                className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+              />
+            </div>
+            <p className="sm:col-span-3 text-[10px] text-coal/40">
+              Dimensões da embalagem de envio. Usadas na publicação de anúncios novos no Mercado Livre
+              (atributos SELLER_PACKAGE_WIDTH/LENGTH/HEIGHT) — não editáveis via API depois que o anúncio já existe.
+            </p>
           </div>
 
           {/* Preço específico por canal + calculadora de margem líquida */}

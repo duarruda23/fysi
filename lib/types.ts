@@ -43,6 +43,10 @@ export interface Peca {
   precoMercadoLivre?: number;
   precoShopee?: number;
   pesoGramas?: number;
+  // Dimensões da embalagem de envio, em centimetros
+  larguraCm?: number;
+  comprimentoCm?: number;
+  alturaCm?: number;
   fotos: string[];
   variacoes: VariacaoPeca[];
   ativo: boolean;

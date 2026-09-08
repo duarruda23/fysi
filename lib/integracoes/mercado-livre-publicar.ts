@@ -161,9 +161,10 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
       },
       // Formato "LxWxH,peso" (cm, cm, cm, gramas) — peso vem de `pecas.peso_gramas`
       // (hoje só usado aqui, nunca era enviado pro ML antes desta correção).
-      // Dimensões de embalagem são um valor de mercado (calça dobrada em saco
-      // plástico) até a Fysi ter a medida real da própria embalagem.
-      dimensions: `25x20x3,${pecaRow.peso_gramas ?? 380}`,
+      // Usa a medida real da embalagem (largura_cm/comprimento_cm/altura_cm)
+      // quando cadastrada; cai pro valor de mercado antigo (calça dobrada em
+      // saco plástico) só pras peças que ainda não têm a medida real.
+      dimensions: `${pecaRow.comprimento_cm ?? 25}x${pecaRow.largura_cm ?? 20}x${pecaRow.altura_cm ?? 3},${pecaRow.peso_gramas ?? 380}`,
     };
 
     const itemRes = await fetch("https://api.mercadolibre.com/items", {

@@ -29,6 +29,9 @@ export async function PUT(
   if (pecaData.devolucoesTexto !== undefined) updatePayload.devolucoes_texto = pecaData.devolucoesTexto;
   if (pecaData.videoYoutube !== undefined) updatePayload.video_youtube = pecaData.videoYoutube || null;
   if (pecaData.pesoGramas !== undefined) updatePayload.peso_gramas = pecaData.pesoGramas;
+  if (pecaData.larguraCm !== undefined) updatePayload.largura_cm = pecaData.larguraCm ?? null;
+  if (pecaData.comprimentoCm !== undefined) updatePayload.comprimento_cm = pecaData.comprimentoCm ?? null;
+  if (pecaData.alturaCm !== undefined) updatePayload.altura_cm = pecaData.alturaCm ?? null;
   if (pecaData.materialPrincipal !== undefined) updatePayload.material_principal = pecaData.materialPrincipal || null;
   if (pecaData.tipoCalca !== undefined) updatePayload.tipo_calca = pecaData.tipoCalca || null;
   if (pecaData.prazoDisponibilidadeDias !== undefined) updatePayload.prazo_disponibilidade_dias = pecaData.prazoDisponibilidadeDias ?? null;
