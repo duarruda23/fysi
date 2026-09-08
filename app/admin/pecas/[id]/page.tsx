@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
 import { TAMANHOS_LETRA, TAMANHOS_NUMERO, MATERIAIS_PRINCIPAIS_ML, TIPOS_CALCA_ML } from "@/lib/types";
+import { estimarLiquidoMercadoLivre } from "@/lib/precificacao-marketplaces";
 
 type ModoTamanho = "letra" | "numero";
 
@@ -33,6 +34,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [novaCategoria, setNovaCategoria] = useState("");
   const [useCustomCategory, setUseCustomCategory] = useState(false);
   const [preco, setPreco] = useState<number>(0);
+  const [precoMercadoLivre, setPrecoMercadoLivre] = useState<number | undefined>(undefined);
   const [pesoGramas, setPesoGramas] = useState<number>(380);
   const [materialPrincipal, setMaterialPrincipal] = useState("");
   const [tipoCalca, setTipoCalca] = useState("");
@@ -68,6 +70,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setReferencia(pecaToEdit.referencia ?? "");
       setDescricao(pecaToEdit.descricao ?? "");
       setPreco(pecaToEdit.preco ?? 0);
+      setPrecoMercadoLivre(pecaToEdit.precoMercadoLivre ?? undefined);
       setPesoGramas(pecaToEdit.pesoGramas ?? 380);
       setMaterialPrincipal(pecaToEdit.materialPrincipal ?? "");
       setTipoCalca(pecaToEdit.tipoCalca ?? "");
@@ -170,6 +173,7 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         referencia,
         categoria: finalCat,
         preco,
+        precoMercadoLivre: precoMercadoLivre || undefined,
         pesoGramas,
         materialPrincipal,
         tipoCalca,
@@ -304,6 +308,54 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
                 className="w-full h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
               />
               <p className="text-[10px] text-coal/40">Usado no feed do Google Shopping. Padrão: 380g.</p>
+            </div>
+          </div>
+
+          {/* Preço específico por canal + calculadora de margem líquida */}
+          <div className="space-y-3 rounded-lg border border-ink/10 bg-sand/40 p-4">
+            <div className="space-y-1.5">
+              <label htmlFor="precoMercadoLivre" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+                Preço específico no Mercado Livre (R$)
+              </label>
+              <input
+                type="number"
+                id="precoMercadoLivre"
+                min="0"
+                step="0.01"
+                value={precoMercadoLivre ?? ""}
+                onChange={(e) => setPrecoMercadoLivre(e.target.value === "" ? undefined : Number(e.target.value))}
+                placeholder={`Vazio = usa o preço do site (R$ ${(preco || 0).toFixed(2)})`}
+                className="w-full sm:w-1/2 h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+              />
+              <p className="text-[10px] text-coal/40">
+                A comissão e o frete grátis do Mercado Livre comem uma parte grande do preço — geralmente vale vender
+                mais caro lá do que no site próprio pra sobrar a mesma margem líquida.
+              </p>
+            </div>
+
+            {/* Calculadora — quanto você recebe líquido em cada canal */}
+            <div className="grid gap-2 sm:grid-cols-3 text-xs">
+              <div className="rounded-md bg-white border border-ink/10 p-2.5">
+                <p className="font-semibold uppercase tracking-wider text-coal/60 text-[10px]">Site próprio</p>
+                <p className="mt-1 font-serif text-base font-bold text-ink">
+                  R$ {(preco || 0).toFixed(2)}
+                </p>
+                <p className="text-[10px] text-coal/40">valor cheio, sem comissão de marketplace</p>
+              </div>
+              <div className="rounded-md bg-white border border-ink/10 p-2.5">
+                <p className="font-semibold uppercase tracking-wider text-coal/60 text-[10px]">Mercado Livre</p>
+                <p className="mt-1 font-serif text-base font-bold text-ink">
+                  R$ {estimarLiquidoMercadoLivre(precoMercadoLivre || preco || 0, pesoGramas || 380).toFixed(2)}
+                </p>
+                <p className="text-[10px] text-coal/40">
+                  estimativa (14% comissão + frete pelo peso) — confirme o valor real no painel do ML antes de publicar
+                </p>
+              </div>
+              <div className="rounded-md bg-white border border-ink/10 p-2.5 opacity-50">
+                <p className="font-semibold uppercase tracking-wider text-coal/60 text-[10px]">Shopee</p>
+                <p className="mt-1 font-serif text-base font-bold text-ink">—</p>
+                <p className="text-[10px] text-coal/40">em breve — ainda não vendemos lá, sem dado real de comissão/frete</p>
+              </div>
             </div>
           </div>
 

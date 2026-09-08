@@ -39,6 +39,9 @@ export interface Peca {
   descricao: string;
   categoria: string;
   preco: number;
+  // Preço específico por canal (opcional). Nulo/undefined = usa `preco` base.
+  precoMercadoLivre?: number;
+  precoShopee?: number;
   pesoGramas?: number;
   fotos: string[];
   variacoes: VariacaoPeca[];

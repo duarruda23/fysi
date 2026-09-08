@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import type { VariacaoPeca } from "@/lib/types";
-import { sincronizarEstoqueVariacaoML } from "@/lib/integracoes/mercado-livre-sync";
+import { sincronizarEstoqueVariacaoML, sincronizarPrecoPecaML } from "@/lib/integracoes/mercado-livre-sync";
 import { sincronizarPecaGoogleMerchant } from "@/lib/integracoes/google-merchant-sync";
 
 export async function PUT(
@@ -19,6 +19,8 @@ export async function PUT(
   if (pecaData.descricao !== undefined) updatePayload.descricao = pecaData.descricao;
   if (pecaData.categoria !== undefined) updatePayload.categoria = pecaData.categoria;
   if (pecaData.preco !== undefined) updatePayload.preco = pecaData.preco;
+  if (pecaData.precoMercadoLivre !== undefined) updatePayload.preco_mercado_livre = pecaData.precoMercadoLivre ?? null;
+  if (pecaData.precoShopee !== undefined) updatePayload.preco_shopee = pecaData.precoShopee ?? null;
   if (pecaData.fotos !== undefined) updatePayload.fotos = pecaData.fotos;
   if (pecaData.ativo !== undefined) updatePayload.ativo = pecaData.ativo;
   if (pecaData.bullets !== undefined) updatePayload.bullets = pecaData.bullets;
@@ -40,6 +42,20 @@ export async function PUT(
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Se o preço base ou o preço específico do ML mudou, empurra o preço
+    // resolvido (ML tem prioridade sobre o base) pros anúncios já publicados.
+    if (pecaData.preco !== undefined || pecaData.precoMercadoLivre !== undefined) {
+      const { data: pecaAtual } = await supabase
+        .from("pecas")
+        .select("preco, preco_mercado_livre")
+        .eq("id", id)
+        .single();
+      if (pecaAtual) {
+        const precoResolvido = Number(pecaAtual.preco_mercado_livre ?? pecaAtual.preco);
+        await sincronizarPrecoPecaML(id, precoResolvido);
+      }
     }
   }
 

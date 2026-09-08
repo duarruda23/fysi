@@ -268,6 +268,52 @@ export async function processarPedidoPagoML(
 }
 
 /**
+ * Empurra um preço novo (o preço específico do ML se tiver sido definido,
+ * senão o preço base) pra todos os anúncios já publicados de uma peça no
+ * Mercado Livre. Fire-and-forget, mesma lógica de `sincronizarEstoqueVariacaoML`
+ * — falha aqui não deve derrubar o salvamento da peça no admin.
+ */
+export async function sincronizarPrecoPecaML(pecaId: string, precoNovo: number): Promise<void> {
+  try {
+    const { data: publicacoes } = await supabaseService
+      .from("publicacoes_marketplace")
+      .select("item_id_externo, status, variacoes_peca!inner(peca_id)")
+      .eq("canal", "mercado_livre")
+      .eq("status", "publicado")
+      .eq("variacoes_peca.peca_id", pecaId);
+
+    if (!publicacoes || publicacoes.length === 0) return;
+
+    const token = await getValidMercadoLivreToken();
+
+    await Promise.allSettled(
+      publicacoes
+        .filter((p) => p.item_id_externo)
+        .map(async (p) => {
+          const res = await fetch(`https://api.mercadolibre.com/items/${p.item_id_externo}`, {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ price: precoNovo }),
+          });
+
+          if (!res.ok) {
+            const detalhe = await res.json().catch(() => null);
+            console.error(
+              `[mercado-livre-sync] Falha ao atualizar preço do item ${p.item_id_externo}:`,
+              detalhe
+            );
+          }
+        })
+    );
+  } catch (err) {
+    console.error("[mercado-livre-sync] Erro ao sincronizar preço:", err);
+  }
+}
+
+/**
  * Baixa o estoque local da Fysi em `quantidade` unidades pra uma variação
  * específica, sem deixar ficar negativo.
  */

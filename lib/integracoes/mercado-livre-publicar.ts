@@ -125,7 +125,10 @@ export async function publicarPecaNoMercadoLivre(pecaId: string): Promise<Result
     const payload = {
       family_name: titulo,
       category_id: CATEGORIA_CALCAS_ML,
-      price: Number(pecaRow.preco),
+      // Preço específico do Mercado Livre tem prioridade sobre o preço base
+      // do site — permite compensar a comissão/frete do canal sem mexer no
+      // preço vendido no site próprio.
+      price: Number(pecaRow.preco_mercado_livre ?? pecaRow.preco),
       currency_id: "BRL",
       available_quantity: v.quantidade_estoque as number,
       buying_mode: "buy_it_now",
