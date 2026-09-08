@@ -9,7 +9,7 @@ const cormorant = Cormorant_Garamond({ subsets: ["latin"], weight: ["500", "600"
 
 export const metadata: Metadata = {
   title: "Fysi | Calças em Atacado e Direto de Fábrica",
-  description: "Compre calças femininas em atacado e direto de fábrica. Moda com qualidade, preço justo e variedade de tamanhos. Fysi Atacado.",
+  description: "Compre calças masculinas em atacado e direto de fábrica. Moda com qualidade, preço justo e variedade de tamanhos. Fysi Atacado.",
   other: {
     "facebook-domain-verification": "1trd67r6p9ws1z5cwvzk8bavmtbsp6",
   },
