@@ -29,6 +29,8 @@ export async function PUT(
   if (pecaData.pesoGramas !== undefined) updatePayload.peso_gramas = pecaData.pesoGramas;
   if (pecaData.materialPrincipal !== undefined) updatePayload.material_principal = pecaData.materialPrincipal || null;
   if (pecaData.tipoCalca !== undefined) updatePayload.tipo_calca = pecaData.tipoCalca || null;
+  if (pecaData.prazoDisponibilidadeDias !== undefined) updatePayload.prazo_disponibilidade_dias = pecaData.prazoDisponibilidadeDias ?? null;
+  if (pecaData.garantia !== undefined) updatePayload.garantia = pecaData.garantia;
 
   if (Object.keys(updatePayload).length > 0) {
     const { error } = await supabase

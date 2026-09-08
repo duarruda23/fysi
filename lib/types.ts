@@ -53,6 +53,9 @@ export interface Peca {
   // Atributos pra publicar no Mercado Livre (categoria Calças) — opcionais até a peça ser publicada lá
   materialPrincipal?: string;
   tipoCalca?: string;
+  // Prazo de produção (dias até ficar pronta pra envio) e texto de garantia
+  prazoDisponibilidadeDias?: number;
+  garantia?: string;
 }
 
 export type StatusPedido = "pendente" | "aprovado" | "recusado";

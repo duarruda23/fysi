@@ -23,6 +23,8 @@ function mapRow(row: Record<string, unknown>, variacoes: VariacaoPeca[]): Peca {
     videoYoutube: (row.video_youtube as string) ?? "",
     materialPrincipal: (row.material_principal as string) ?? "",
     tipoCalca: (row.tipo_calca as string) ?? "",
+    prazoDisponibilidadeDias: row.prazo_disponibilidade_dias != null ? Number(row.prazo_disponibilidade_dias) : undefined,
+    garantia: (row.garantia as string) ?? "",
   };
 }
 
@@ -86,6 +88,8 @@ export async function POST(request: Request) {
     video_youtube: pecaData.videoYoutube || null,
     material_principal: pecaData.materialPrincipal || null,
     tipo_calca: pecaData.tipoCalca || null,
+    prazo_disponibilidade_dias: pecaData.prazoDisponibilidadeDias ?? null,
+    garantia: pecaData.garantia ?? "",
   });
 
   if (pecaError) {

@@ -57,7 +57,7 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const [quantidadesGrade, setQuantidadesGrade] = useState<Record<string, number>>({});
   const [vipSelectedSize, setVipSelectedSize] = useState<Tamanho | null>(null);
   const [addedMessage, setAddedMessage] = useState(false);
-  const [infoTab, setInfoTab] = useState<"detalhes" | "envio" | "devolucoes">("detalhes");
+  const [infoTab, setInfoTab] = useState<"detalhes" | "envio" | "devolucoes" | "garantia">("detalhes");
 
   // VIP Waiting List States
   const [vipName, setVipName] = useState("");
@@ -386,6 +386,13 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
             </div>
           )}
 
+          {/* Prazo de disponibilidade */}
+          {peca.prazoDisponibilidadeDias != null && (
+            <p className="text-xs text-coal/60">
+              Pronto pra envio em até <span className="font-semibold text-ink">{peca.prazoDisponibilidadeDias} {peca.prazoDisponibilidadeDias === 1 ? "dia" : "dias"}</span> após a confirmação do pedido.
+            </p>
+          )}
+
           {/* Tabs Section */}
           <div className="pt-4">
             <div className="flex border-b border-ink/10 gap-6">
@@ -413,6 +420,14 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               >
                 Devoluções
               </button>
+              <button
+                onClick={() => setInfoTab("garantia")}
+                className={`pb-2 text-xs font-bold uppercase tracking-wider border-b-2 transition-all ${
+                  infoTab === "garantia" ? "border-ink text-ink" : "border-transparent text-coal/45 hover:text-ink/80"
+                }`}
+              >
+                Garantia
+              </button>
             </div>
 
             <div className="py-4 text-xs leading-relaxed text-coal/70 transition-all duration-300">
@@ -429,6 +444,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
               {infoTab === "devolucoes" && (
                 <p className="whitespace-pre-line">
                   {peca.devolucoesTexto || "Informações de devoluções em breve."}
+                </p>
+              )}
+              {infoTab === "garantia" && (
+                <p className="whitespace-pre-line">
+                  {peca.garantia || "Informações de garantia em breve."}
                 </p>
               )}
             </div>

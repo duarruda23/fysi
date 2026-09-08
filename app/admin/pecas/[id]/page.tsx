@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, CheckCircle2, AlertCircle, X, Camera } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { ImageUpload } from "@/components/ImageUpload";
 import type { Peca, VariacaoPeca, Tamanho } from "@/lib/types";
@@ -36,6 +36,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
   const [pesoGramas, setPesoGramas] = useState<number>(380);
   const [materialPrincipal, setMaterialPrincipal] = useState("");
   const [tipoCalca, setTipoCalca] = useState("");
+  const [prazoDisponibilidadeDias, setPrazoDisponibilidadeDias] = useState<number | undefined>(undefined);
+  const [garantia, setGarantia] = useState("");
   const [descricao, setDescricao] = useState("");
   const [bullets, setBullets] = useState<string[]>([""]);
   const [detalheTexto, setDetalheTexto] = useState("");
@@ -69,6 +71,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
       setPesoGramas(pecaToEdit.pesoGramas ?? 380);
       setMaterialPrincipal(pecaToEdit.materialPrincipal ?? "");
       setTipoCalca(pecaToEdit.tipoCalca ?? "");
+      setPrazoDisponibilidadeDias(pecaToEdit.prazoDisponibilidadeDias ?? undefined);
+      setGarantia(pecaToEdit.garantia ?? "");
       setFotos(pecaToEdit.fotos?.length ? pecaToEdit.fotos : [""]);
       setVideoYoutube(pecaToEdit.videoYoutube ?? "");
       setAtivo(pecaToEdit.ativo ?? true);
@@ -169,6 +173,8 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
         pesoGramas,
         materialPrincipal,
         tipoCalca,
+        prazoDisponibilidadeDias,
+        garantia,
         descricao,
         fotos: fotosFinais,
         videoYoutube: videoYoutube.trim() || "",
@@ -299,6 +305,24 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
               />
               <p className="text-[10px] text-coal/40">Usado no feed do Google Shopping. Padrão: 380g.</p>
             </div>
+          </div>
+
+          {/* Prazo de disponibilidade */}
+          <div className="space-y-1.5">
+            <label htmlFor="prazoDisponibilidadeDias" className="text-xs font-semibold uppercase tracking-wider text-coal/65">
+              Prazo de Disponibilidade (dias)
+            </label>
+            <input
+              type="number"
+              id="prazoDisponibilidadeDias"
+              min="0"
+              step="1"
+              value={prazoDisponibilidadeDias ?? ""}
+              onChange={(e) => setPrazoDisponibilidadeDias(e.target.value === "" ? undefined : Number(e.target.value))}
+              placeholder="Ex: 7"
+              className="w-full sm:w-1/2 h-10 px-3 rounded-md border border-ink/10 focus:border-ink text-sm text-ink outline-none"
+            />
+            <p className="text-[10px] text-coal/40">Quantos dias a peça leva pra ficar pronta pra envio, a partir do pedido.</p>
           </div>
 
           {/* Atributos pro Mercado Livre */}
@@ -487,6 +511,16 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
                   className="w-full p-3 rounded-md border border-ink/10 text-sm text-ink outline-none resize-none focus:border-ink"
                 />
               </div>
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-ink/50">Garantia</span>
+                <textarea
+                  rows={3}
+                  value={garantia}
+                  onChange={e => setGarantia(e.target.value)}
+                  placeholder="Ex: 90 dias contra defeito de fabricação..."
+                  className="w-full p-3 rounded-md border border-ink/10 text-sm text-ink outline-none resize-none focus:border-ink"
+                />
+              </div>
             </div>
           </div>
 
@@ -497,6 +531,20 @@ export default function AdminPieceEditorPage({ params }: { params: { id: string 
                 Fotos da Peça *
               </label>
               <span className="text-[10px] text-coal/40">{fotos.filter(f => f).length} foto(s)</span>
+            </div>
+
+            {/* Guia de fotos — direcionamento pra padronizar o que fotografar */}
+            <div className="flex items-start gap-2.5 rounded-lg border border-gold/25 bg-gold/5 px-3.5 py-3">
+              <Camera size={15} className="mt-0.5 shrink-0 text-gold" />
+              <div className="text-[11px] leading-relaxed text-coal/70">
+                <p className="font-semibold text-ink/80 mb-1">Pra cada peça, tente cobrir esses 4 tipos de foto:</p>
+                <ul className="space-y-0.5 list-disc pl-4">
+                  <li><span className="font-semibold text-ink/70">Produto isolado</span> — still da peça sozinha (flat lay ou em cabide), sem ninguém vestindo.</li>
+                  <li><span className="font-semibold text-ink/70">Com contexto</span> — a peça num ambiente/cenário, fora do estúdio.</li>
+                  <li><span className="font-semibold text-ink/70">Com modelo</span> — a peça vestida por uma pessoa.</li>
+                  <li><span className="font-semibold text-ink/70">Detalhes</span> — close-up em acabamento, tecido, costura, botões.</li>
+                </ul>
+              </div>
             </div>
 
             <div className="space-y-4">
