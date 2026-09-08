@@ -1,72 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import type { Peca, VariacaoPeca } from "@/lib/types";
-
-// Mapeia linha do banco para o tipo Peca da app
-function mapRow(row: Record<string, unknown>, variacoes: VariacaoPeca[]): Peca {
-  return {
-    id: row.id as string,
-    nome: row.nome as string,
-    referencia: row.referencia as string,
-    descricao: row.descricao as string,
-    categoria: row.categoria as string,
-    preco: Number(row.preco),
-    precoMercadoLivre: row.preco_mercado_livre != null ? Number(row.preco_mercado_livre) : undefined,
-    precoShopee: row.preco_shopee != null ? Number(row.preco_shopee) : undefined,
-    pesoGramas: row.peso_gramas != null ? Number(row.peso_gramas) : 380,
-    larguraCm: row.largura_cm != null ? Number(row.largura_cm) : undefined,
-    comprimentoCm: row.comprimento_cm != null ? Number(row.comprimento_cm) : undefined,
-    alturaCm: row.altura_cm != null ? Number(row.altura_cm) : undefined,
-    fotos: (row.fotos as string[]) ?? [],
-    ativo: row.ativo as boolean,
-    criadoEm: row.criado_em as string,
-    variacoes,
-    bullets: (row.bullets as string[]) ?? [],
-    detalheTexto: (row.detalhe_texto as string) ?? "",
-    envioTexto: (row.envio_texto as string) ?? "",
-    devolucoesTexto: (row.devolucoes_texto as string) ?? "",
-    videoYoutube: (row.video_youtube as string) ?? "",
-    materialPrincipal: (row.material_principal as string) ?? "",
-    tipoCalca: (row.tipo_calca as string) ?? "",
-    prazoDisponibilidadeDias: row.prazo_disponibilidade_dias != null ? Number(row.prazo_disponibilidade_dias) : undefined,
-    garantia: (row.garantia as string) ?? "",
-  };
-}
+import { getPecas } from "@/lib/data/pecas";
+import type { VariacaoPeca } from "@/lib/types";
 
 export async function GET() {
-  const supabase = await createClient();
-
-  const { data: pecasRows, error: pecasError } = await supabase
-    .from("pecas")
-    .select("*")
-    .order("criado_em", { ascending: false });
-
-  if (pecasError) {
-    return NextResponse.json({ error: pecasError.message }, { status: 500 });
+  try {
+    const pecas = await getPecas();
+    return NextResponse.json(pecas);
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
-
-  const { data: variacoesRows, error: varError } = await supabase
-    .from("variacoes_peca")
-    .select("*");
-
-  if (varError) {
-    return NextResponse.json({ error: varError.message }, { status: 500 });
-  }
-
-  const pecas = (pecasRows ?? []).map((row) => {
-    const variacoes: VariacaoPeca[] = (variacoesRows ?? [])
-      .filter((v) => v.peca_id === row.id)
-      .map((v) => ({
-        id: v.id,
-        cor: v.cor,
-        corHex: v.cor_hex ?? undefined,
-        tamanho: v.tamanho,
-        quantidadeEstoque: v.quantidade_estoque,
-      }));
-    return mapRow(row, variacoes);
-  });
-
-  return NextResponse.json(pecas);
 }
 
 export async function POST(request: Request) {

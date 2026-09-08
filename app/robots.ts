@@ -18,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         '/lan-jul26-calca/obrigado',
       ],
     },
-    sitemap: 'https://fysiatacado.com.br/sitemap.xml',
+    sitemap: 'https://www.fysiatacado.com.br/sitemap.xml',
   }
 }
