@@ -13,11 +13,13 @@ const passos = [
   "Você conhece a linha e combina o pedido.",
 ]
 
-// Troque por <Image> quando as imagens finais chegarem em /public/atacado (01-hero ... 06-embalagem).
-function Foto({ rotulo, className = "" }: { rotulo: string; className?: string }) {
+// Imagens em /public/atacado (webp). Só o hero tem prioridade de carregamento; o resto é lazy.
+function Foto({
+  arquivo, alt, className = "", sizes, priority = false,
+}: { arquivo: string; alt: string; className?: string; sizes: string; priority?: boolean }) {
   return (
-    <div role="img" aria-label={rotulo} className={`flex items-center justify-center bg-gradient-to-br from-coal to-ink ${className}`}>
-      <Image src="/brand/logo-ouro.png" alt="" width={120} height={64} className="h-16 w-auto opacity-40" />
+    <div className={`relative overflow-hidden bg-coal ${className}`}>
+      <Image src={`/atacado/${arquivo}.webp`} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" />
     </div>
   )
 }
@@ -39,7 +41,13 @@ export default function AtacadoPage() {
             <p className="mt-4 text-base leading-relaxed text-pearl/75 text-pretty">
               A Fysi fabrica no padrão das grandes marcas e vende no atacado, sem intermediário. Preencha o formulário e o nosso time chama você no WhatsApp.
             </p>
-            <Foto rotulo="Calças masculinas de sarja Fysi" className="mt-8 aspect-[4/3] w-full rounded-xl md:hidden" />
+            <Foto
+              arquivo="01-hero"
+              alt="Vendedor arrumando calças de sarja nas prateleiras e na arara de uma loja masculina"
+              sizes="(min-width: 768px) 560px, calc(100vw - 40px)"
+              priority
+              className="mt-8 aspect-video w-full rounded-xl"
+            />
           </div>
 
           <div id="cadastro" className="relative mt-8 scroll-mt-4 rounded-2xl bg-pearl p-5 text-ink shadow-soft md:mt-0 md:p-7">
@@ -62,10 +70,15 @@ export default function AtacadoPage() {
             </div>
           ))}
         </div>
-        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3">
-          <Foto rotulo="Detalhe do tecido de sarja" className="aspect-square rounded-xl" />
-          <Foto rotulo="Calça masculina de sarja dobrada" className="aspect-square rounded-xl" />
-          <Foto rotulo="Embalagem Fysi para envio" className="hidden aspect-square rounded-xl md:flex" />
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Foto arquivo="02-pilha" alt="Pilha de calças de sarja dobradas sobre o balcão, prontas para reposição"
+            sizes="(min-width: 768px) 280px, 50vw" className="aspect-[4/5] rounded-xl" />
+          <Foto arquivo="03-arara" alt="Arara com calças de sarja em sete tonalidades diferentes"
+            sizes="(min-width: 768px) 280px, 50vw" className="aspect-[4/5] rounded-xl" />
+          <Foto arquivo="04-detalhe" alt="Mãos segurando o cós, o botão e a costura de uma calça de sarja preta"
+            sizes="(min-width: 768px) 280px, 50vw" className="aspect-[4/5] rounded-xl" />
+          <Foto arquivo="05-modelo" alt="Modelo em pé na calçada vestindo calça de sarja preta"
+            sizes="(min-width: 768px) 280px, 50vw" className="aspect-[4/5] rounded-xl" />
         </div>
       </section>
 
@@ -81,6 +94,8 @@ export default function AtacadoPage() {
               </li>
             ))}
           </ol>
+          <Foto arquivo="06-embalagem" alt="Pedido de atacado sendo embalado em uma bancada de estoque"
+            sizes="(min-width: 1152px) 1112px, calc(100vw - 40px)" className="mt-8 aspect-video w-full rounded-xl" />
           <p className="mt-6 text-sm text-coal/70">Esta página é só para quem tem loja. Não atendemos consumidor final por aqui.</p>
           <a href="#cadastro" className="mt-6 inline-flex h-12 items-center rounded-lg bg-ink px-7 text-sm font-semibold text-pearl transition-colors hover:bg-coal">
             Quero ser revendedor
