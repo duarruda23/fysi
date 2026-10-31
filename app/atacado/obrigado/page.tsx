@@ -1,3 +1,4 @@
+import Image from "next/image"
 import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
@@ -19,7 +20,7 @@ export default function ObrigadoPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-ink px-5 py-14 text-center text-pearl">
       <ObrigadoTracker eventId={eventId} />
-      <img src="/brand/logo-horizontal-branco.png" alt="Fysi" width={110} height={30} className="h-7 w-auto" />
+      <Image src="/brand/logo-horizontal-branco.png" alt="Fysi" width={158} height={30} priority className="h-7 w-auto" />
       <div className="mt-10 flex h-16 w-16 items-center justify-center rounded-full border border-gold/40 bg-gold/10" aria-hidden="true">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#CCB72F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
       </div>

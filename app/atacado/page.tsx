@@ -1,3 +1,4 @@
+import Image from "next/image"
 import LeadForm from "./LeadForm"
 
 const diferenciais = [
@@ -16,7 +17,7 @@ const passos = [
 function Foto({ rotulo, className = "" }: { rotulo: string; className?: string }) {
   return (
     <div role="img" aria-label={rotulo} className={`flex items-center justify-center bg-gradient-to-br from-coal to-ink ${className}`}>
-      <img src="/brand/logo-ouro.png" alt="" width={64} height={64} className="h-16 w-auto opacity-40" />
+      <Image src="/brand/logo-ouro.png" alt="" width={120} height={64} className="h-16 w-auto opacity-40" />
     </div>
   )
 }
@@ -28,7 +29,7 @@ export default function AtacadoPage() {
       <section className="bg-ink text-pearl">
         <div className="mx-auto max-w-6xl px-5 pt-6 pb-10 md:grid md:grid-cols-2 md:items-center md:gap-14 md:py-16">
           <div>
-            <img src="/brand/logo-horizontal-branco.png" alt="Fysi" width={110} height={30} className="h-7 w-auto" />
+            <Image src="/brand/logo-horizontal-branco.png" alt="Fysi" width={158} height={30} priority className="h-7 w-auto" />
             <p className="mt-8 inline-block rounded-full border border-gold/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">
               Apenas para lojistas
             </p>
